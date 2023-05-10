@@ -1,4 +1,4 @@
-const { sign, verify } = require('jsonwebtoken')
+const { sign, verify } = require("jsonwebtoken");
 
 const tokenKey = process.env.TOKEN_SECRET || "test"
 
