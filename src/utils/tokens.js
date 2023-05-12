@@ -1,6 +1,6 @@
-const { sign, verify } = require('jsonwebtoken')
+const { sign, verify } = require("jsonwebtoken");
 
-const tokenKey = process.env.TOKEN_SECRET
+const tokenKey = process.env.TOKEN_SECRET || "test"
 
 const newToken = (userID = "") => sign({
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24),

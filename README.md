@@ -19,5 +19,4 @@ Then open you code editor then start working...
 
 ## Packages
 * [Express](https://expressjs.com/en/4x/api.html#req)
-* [MySql](https://www.npmjs.com/package/mysql)
-ADD SOME
+* [MySql2](https://www.npmjs.com/package/mysql2)
