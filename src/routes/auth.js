@@ -74,7 +74,7 @@ router.post("/register",
                     return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 01 });
                 }
 
-                await sendEmail(email,
+                sendEmail(email,
                     "You have been granted access",
                     `Your new password is: ${pass}<br/>email: ${email}<br/>User ID:${id}<br/>Area ID: ${areaId}`, "new-users")
 
@@ -92,7 +92,7 @@ router.post("/",
         .withMessage("Invalid email")], (req, res, next) => {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(422).json({ errors: errors.array() });
+                return res.status(401).json({ errors: errors.array() });
             }
             next()
         },
@@ -140,14 +140,18 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
     (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(422).json({ errors: errors.array() });
+            return res.status(404).json({ errors: errors.array() });
         }
+
+        next()
     },
     expressAsyncHandler(async (req, res) => {
         const { email } = req.body;
+
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], (err, dbResults) => {
+
             if (err) {
-                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 02 })
+                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 01 })
             }
             if (!dbResults[0]) {
                 return res.status(404).json({ massage: "User not found.", data: { email } })
@@ -160,20 +164,22 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
             UPDATE users SET 
             password = ?, 
             updated_by = ?, 
-            last_updated = ?, 
+            last_updated = ?
             WHERE email = ?;`,
-                [hashPassword(newPassword), "system", getTimestamp(), email], async (err, dbResults) => {
+                [hashPassword(newPassword), "system", getTimestamp(), email], (err, dbResults) => {
                     if (err) {
                         return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 02 })
                     }
 
-                    if (dbResults.affectedRows > 0 && await sendEmail(email, "New password generated", `Your new password is: ${newPassword}`)) {
+                    if (dbResults.affectedRows > 0 ) {
+                        sendEmail(email, "New password generated", `Your new password is: ${newPassword}`)
                         return res.status(200).json({ massage: "Password reset successfully." })
                     }
 
                     res.status(500).json({ massage: "Error updating password." })
                 }
             )
+
         })
     }))
 
