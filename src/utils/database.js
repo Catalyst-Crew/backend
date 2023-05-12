@@ -15,16 +15,22 @@ const db = mysql.createPool({
     connectionLimit: 10,
 });
 
-//Generate timestamp
-const CURRENT_TIMESTAMP = { toSqlString: function () { return 'CURRENT_TIMESTAMP()'; } };
 
 //Funtion returning an id using UUID
-const getNewID = (prefix="") => {
+const getNewID = (prefix = "") => {
     return prefix + crypto.randomUUID();
 }
 
+//Generate a password
 const getNewPassword = () => {
     return crypto.randomBytes(8).toString("hex");
 }
 
-module.exports = { db, CURRENT_TIMESTAMP, getNewID, getNewPassword }
+//Get timestamp for +2 UTC
+const getTimestamp = () => {
+    const date = new Date();
+    const offset = 2 * 60 * 60 * 1000; // UTC+2 offset in milliseconds
+    return new Date(date.getTime() + offset);
+}
+
+module.exports = { db, getNewID, getNewPassword, getTimestamp }
