@@ -1,8 +1,11 @@
 const cors = require("cors");
 const express = require("express");
 const dotenv = require("dotenv").config();
+
 const { db } = require("./src/utils/database");
-const { newToken } = require("./src/utils/tokens");
+
+//Routes
+const auth = require("./src/routes/auth");
 
 
 const app = express();
@@ -16,14 +19,18 @@ app.use([
     express.urlencoded({ extended: true })
 ]);
 
-//Connect to Db
+// //Connect to Db
 // db.getConnection((err)=>{
 //     if(err) throw err;
 //     console.log("Database Connected");
 // })
 
+
 //Routes here
-console.log(newToken("8371154e-36b8-43fe-916e-2645a9774d26"));
+app.use("/auth", auth)
+app.all("/", (_, res)=>{
+    res.send();
+})
 
 //Satrt the server
 app.listen(PORT, () => {
