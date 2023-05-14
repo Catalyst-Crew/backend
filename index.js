@@ -9,7 +9,7 @@ const { db } = require("./src/utils/database");
 const auth = require("./src/routes/auth");
 
 const app = express();
-const PORT = 3000 || process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 //Apply Midllewares
 app.enable("trust proxy");
@@ -21,7 +21,7 @@ app.use([
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
 // //Connect to Db
-const isDev = process.env.IS_DEV === "true";
+const isDev = process.env.IS_DEV === "true" ? true : false;
 
 if (!isDev) {
     db.getConnection((err) => {
