@@ -1,4 +1,4 @@
-const logger = require('morgan')
+
 const { Router } = require('express')
 const expressAsyncHandler = require('express-async-handler')
 const { check, validationResult } = require("express-validator")
@@ -11,9 +11,6 @@ const { db, getNewPassword, getNewID, getTimestamp } = require('../utils/databas
 
 //Inti
 const router = Router()
-
-//Middleware
-router.use(logger())
 
 
 router.post("/register",
@@ -171,7 +168,7 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
                         return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 02 })
                     }
 
-                    if (dbResults.affectedRows > 0 ) {
+                    if (dbResults.affectedRows > 0) {
                         sendEmail(email, "New password generated", `Your new password is: ${newPassword}`)
                         return res.status(200).json({ massage: "Password reset successfully." })
                     }
