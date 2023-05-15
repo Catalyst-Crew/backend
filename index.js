@@ -16,7 +16,7 @@ app.enable("trust proxy");
 app.use([
     express.json(),
     cors(),
-    express.urlencoded({ extended: true })
+    //express.urlencoded({ extended: true })
 ]);
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
