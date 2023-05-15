@@ -7,6 +7,7 @@ const { db } = require("./src/utils/database");
 
 //Routes
 const auth = require("./src/routes/auth");
+const users = require("./src/routes/users");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ if (!isDev) {
 
 //Routes here
 app.use("/auth", auth)
+app.use("/user", users)
 app.all("/", (_, res) => {
     res.send();
 })
