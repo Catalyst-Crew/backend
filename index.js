@@ -9,15 +9,18 @@ const { db } = require("./src/utils/database");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
 
+const miners = require("./src/routes/miners");
+const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT | 3000;
 
 //Apply Midllewares
 app.enable("trust proxy");
 app.use([
     express.json(),
     cors(),
-    express.urlencoded({ extended: true })
+    //express.urlencoded({ extended: true })
 ]);
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
@@ -32,11 +35,12 @@ if (!isDev) {
 }
 
 //Routes here
-app.use("/auth", auth)
-app.use("/user", users)
+app.use("/auth", auth);
+app.use("/miners", miners);
+app.use("/user", users);
 app.all("/", (_, res) => {
     res.send();
-})
+});
 
 //Start the server
 app.listen(PORT, () => {
