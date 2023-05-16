@@ -8,6 +8,8 @@ const { db } = require("./src/utils/database");
 //Routes
 const auth = require("./src/routes/auth");
 
+const miners = require("./src/routes/miners");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -32,6 +34,8 @@ if (!isDev) {
 
 //Routes here
 app.use("/auth", auth)
+
+app.use("/miners", miners)
 app.all("/", (_, res) => {
     res.send();
 })
