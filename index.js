@@ -9,6 +9,8 @@ const { db } = require("./src/utils/database");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
 
+const miners = require("./src/routes/miners");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -32,11 +34,12 @@ if (!isDev) {
 }
 
 //Routes here
-app.use("/auth", auth)
-app.use("/user", users)
+app.use("/auth", auth);
+app.use("/miners", miners);
+app.use("/user", users);
 app.all("/", (_, res) => {
     res.send();
-})
+});
 
 //Start the server
 app.listen(PORT, () => {
