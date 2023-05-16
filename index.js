@@ -9,9 +9,10 @@ const { db } = require("./src/utils/database");
 const auth = require("./src/routes/auth");
 
 const miners = require("./src/routes/miners");
+const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT | 3000;
 
 //Apply Midllewares
 app.enable("trust proxy");
