@@ -85,8 +85,8 @@ router.post('/level',
     )
 )
 
-/*route to delete user
-router.delete('/:id',check(["userId", "status"]).notEmpty(),
+//route to delete user
+router.delete('/delete',check(["userId", "status","name"]).notEmpty(),
 (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -95,22 +95,13 @@ router.delete('/:id',check(["userId", "status"]).notEmpty(),
     next()
 },
 expressAsyncHandler(async (req, res) => {
-    const { userId, status} = req.body;
+    const { userId, status,name} = req.body;
 
-    db.execute(
+    db.execute(`
         DELETE
-        name = ?,
-        role = ?,
-        email = ?,
-        password = ?,
-        created_by = ?,
-        updated_by = ?,
-        last_updated = ?,
-        created = ?,
-        access = ?,
-        areasid = ?
+            access = ?
         FROM
-        id=?
+            users`
         [user, getTimestamp(), status, userId],
         (err, dbResults) => {
             if (err) {
@@ -119,13 +110,13 @@ expressAsyncHandler(async (req, res) => {
 
             if (dbResults.
                 affectedRows) {
-                return res.status(200).json({ massage: "User access status updated" });
+                return res.status(200).json({ massage: "User Deleted" });
             }
         }
     )
 }
 )
-)*/
+)
 
 
 
