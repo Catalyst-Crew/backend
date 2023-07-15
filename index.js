@@ -1,7 +1,7 @@
+require("dotenv").config();
 const cors = require("cors");
 const logger = require('morgan')
 const express = require("express");
-const dotenv = require("dotenv").config();
 
 const { db } = require("./src/utils/database");
 
@@ -40,6 +40,12 @@ app.use("/miners", miners);
 app.use("/user", users);
 app.all("/", (_, res) => {
     res.send();
+});
+
+//Error handler
+app.use((err, req, res, next) => {
+    console.log(err);
+    res.status(500).send({ massage: "Something went wrong" });
 });
 
 //Start the server
