@@ -30,21 +30,20 @@ const isDev = process.env.IS_DEV === "true" ? true : false;
 if (!isDev) {
     db.getConnection((err) => {
         if (err) throw err;
-        console.log("Database Connected");
+        //console.log("Database Connected");
     })
 }
 
 //Routes here
 app.use("/auth", auth);
 app.use("/miners", miners);
-app.use("/user", users);
+app.use("/users", users);
 app.all("/", (_, res) => {
     res.send();
 });
 
 //Error handler
 app.use((err, req, res, next) => {
-    console.log(err);
     res.status(500).send({ massage: "Something went wrong" });
 });
 
