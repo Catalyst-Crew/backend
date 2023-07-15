@@ -68,7 +68,7 @@ router.post("/register",
         db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
             async (err) => {
                 if (err) {
-                    return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 01 });
+                    return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 sendEmail(email,
@@ -111,7 +111,7 @@ router.post("/",
       FROM
         users WHERE email = ?;`, [email], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 02 })
+                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 2 })
             }
 
             if (!dbResults[0]) {
@@ -125,8 +125,6 @@ router.post("/",
 
                 //Remove password from the data
                 dbResults[0].password = "";
-
-                res.cookie("token", token, { httpOnly: true })
                 return res.status(200).json({ massage: "User loggedin successfully.", data: { token, ...dbResults[0] } })
             }
             res.status(401).json({ massage: "Invalid email or password." })
@@ -148,7 +146,7 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], (err, dbResults) => {
 
             if (err) {
-                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 01 })
+                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 })
             }
             if (!dbResults[0]) {
                 return res.status(404).json({ massage: "User not found.", data: { email } })
@@ -165,7 +163,7 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
             WHERE email = ?;`,
                 [hashPassword(newPassword), "system", getTimestamp(), email], (err, dbResults) => {
                     if (err) {
-                        return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 02 })
+                        return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 2 })
                     }
 
                     if (dbResults.affectedRows > 0) {
