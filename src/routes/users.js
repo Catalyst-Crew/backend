@@ -7,12 +7,12 @@ const { db, getTimestamp } = require('../utils/database')
 
 const route = Router();
 
-route.post('/:id',
+route.put('/:id',
     check(["id", "access", "areaId", "user", "role"]).notEmpty().escape().withMessage("Please make sure all fields are present"),
     (req, res, next) => {
         const result = validationResult(req);
         if (!result.isEmpty()) {
-            return res.send({ massage: "Missing or invalid fields", data: result.array() });
+            return res.status(400).json({ massage: "Missing or invalid fields", data: result.array() });
         }
         next();
     },
@@ -35,7 +35,6 @@ route.post('/:id',
                 }
 
                 if (dbResults.affectedRows) {
-                    console.log(dbResults);
                     return res.status(200).json({ massage: "User updated successfully" });
                 }
 
