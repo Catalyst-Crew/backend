@@ -1,216 +1,233 @@
-const { Router } = require('express')
-const expressAsyncHandler = require('express-async-handler')
-const { check, validationResult } = require("express-validator")
+const { Router } = require('express');
+const { check, matchedData } = require("express-validator");
+const expressAsyncHandler = require('express-async-handler');
 
-//Utils
 const { verifyToken } = require('../utils/tokens');
 const { db, getNewID, getTimestamp } = require('../utils/database');
+const { validationErrorMiddleware } = require('../utils/middlewares');
+
 const ENV = process.env.IS_DEV === "true";
 
-const router = Router()
+const router = Router();
+
+router.use(expressAsyncHandler(async (req, res, next) => {
+    if (!ENV) {
+        verifyToken(req, res, next); //uncomment in production
+    }
+
+    if (ENV) {
+        next() //Remove this on production
+    }
+}))
+
+//get all employees
+router.get('/',
+    expressAsyncHandler((_, res) => {
+        const sqlQuery = `
+        SELECT
+            miners.id,
+            miners.name,
+            miners.shift,
+            miners.sensorsid,
+            miners.created_by,
+            miners.updated_by,
+            miners.last_updated,
+            miners.created,
+            miners.email,
+            users.name AS supervisor_name,
+            users.id AS supervisor_id
+        FROM
+            miners
+        INNER JOIN
+            users
+        ON
+            miners.usersid = users.id
+        WHERE
+            miners.status != 3;
+        `;
+        db.execute(sqlQuery, [], (err, dbResults) => {
+            if (err) {
+                return res.status(500).json({ error: ENV ? err : 1 });
+            }
+
+            res.status(200).json({ message: "Employees fetched successfully.", data: dbResults })
+        })
+    })
+)
 
 // POST /create new employe
 router.post('/create',
     [
-        check('name', 'Name is required').not().isEmpty(),
-        check('shift', 'Shift is not valid').not().isEmpty(),
-        check('userId', 'UserId creating the employee is required').not().isEmpty(),
-        check('username', 'Username creating the employee is required').not().isEmpty()
+        check('name', 'Name is required').escape().not().isEmpty(),
+        check('shift', 'Shift is not valid').escape().not().isEmpty(),
+        check('email', 'Email is required').escape().isEmail(),
+        check('userId', 'UserId creating the employee is required').escape().not().isEmpty(),
+        check('username', 'Username creating the employee is required').escape().not().isEmpty()
     ],
-    (req, res, next) => {
-        const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() })
-        }
-
-        //verifyToken(req, res, next); //uncomment on production
-
-        //Remove this on production
-        next()
-    }
-    ,
     expressAsyncHandler((req, res) => {
-        const { name, username, shift, userId } = req.body
+        const { name, username, shift, userId, email } = req.body
 
         const id = getNewID()
         const timestamp = getTimestamp();
 
         const sqlQuery = `
-        INSERT INTO
-            miners (
-                id,
-                name,
-                usersid,
-                sensorsid,
-                shift,
-                created_by,
-                updated_by,
-                last_updated,
-                created,
-                usersid2
-            )
-            VALUES
-            (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            );`;
+        INSERT INTO miners
+            (id, 
+            name,
+            shift, 
+            created_by, 
+            updated_by, 
+            last_updated, 
+            created, 
+            usersid, 
+            email) 
+            VALUES 
+            (?, 
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?);
+        `;
 
-        db.execute(sqlQuery, [id, name, userId, "none", shift, username.toLowerCase(), username.toLowerCase(), timestamp, timestamp, userId], (err, dbResults) => {
+        db.execute(sqlQuery, [id, name, shift, username.toLowerCase(), username.toLowerCase(), timestamp, timestamp, userId, email], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ error: ENV ? err : 01 });
-            }
-            console.log(dbResults);
-
-            res.status(200).json({ massage: "Employee added successfully.", data: {} })
-        })
-
-    })
-)
-
-
-// update employee
-router.post("/employee",
-    [
-        check('minerId', 'Miner is required').not().isEmpty(),
-        check('username', 'Name of the user updating the employee is required').not().isEmpty(),
-        check('sensorId', 'The new sensor id is required').not().isEmpty()
-    ],
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(404).json({ errors: errors.array() });
-        }
-        next()
-
-        //verifyToken(req, res, next)
-    },
-    expressAsyncHandler((req, res) => {
-        const id = req.body.minerId;
-        const username = req.body.username;
-        const sensorId = req.body.sensorId;
-
-        const sqlQuery = `
-        UPDATE
-          miners
-            SET
-          sensorsid = ?,
-          updated_by = ?,
-          last_updated = ?
-            WHERE
-          id = ?;
-        `
-        db.execute(sqlQuery, [sensorId, username, getTimestamp(), id], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 01 });
+                return res.status(500).json({ error: ENV ? err : 1 });
             }
 
-            console.log(dbResults);
+            console.log(dbResults)
 
-            //call the log function
-
-            res.status(200).json({ massage: "Sensor id updated successfully.", data: {} })
+            res.status(200).json({ message: "Employee added successfully.", data: {} })
         })
 
     })
 )
 
 // update employee
-router.post("/update/shift",
+router.put("/:id",
     [
-        check('minerId', 'Miner is required').not().isEmpty(),
-        check('username', 'Name of the user updating the employee is required').not().isEmpty(),
-        check('shift', 'The new shift is required').not().isEmpty()
+        check('id', 'Miner is required').escape().not().isEmpty(),
+        check('shift', 'Shift is required').escape(),
+        check('supervisor_id', 'SupervisorId is required').escape(),
+        check('sensorsid', 'The new sensor id is required'),
+        check('updated_by', 'Name of the user updating the employee is required').escape().not().isEmpty()
     ],
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(404).json({ errors: errors.array() });
-        }
-        next()
-
-        //verifyToken(req, res, next)
-    },
+    validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
-        const id = req.body.minerId;
-        const username = req.body.username;
-        const shift = req.body.shift;
+        let { id, shift, supervisor_id, sensorsid, updated_by } = matchedData(req);
 
         const sqlQuery = `
         UPDATE
-          miners
-            SET
-          shift = ?,
-          updated_by = ?,
-          last_updated = ?
-            WHERE
-          id = ?;
+            miners
+        SET
+            sensorsid = ?,
+            updated_by = ?,
+            last_updated = ?,
+            status = 1,
+            shift = ?,
+            usersid = ?
+        WHERE
+            id = ?;
         `
-        db.execute(sqlQuery, [shift, username, getTimestamp(), id], (err, dbResults) => {
+        db.execute(sqlQuery, [sensorsid, updated_by, getTimestamp(), shift, supervisor_id, id], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ error: ENV ? err : 01 });
+                return res.status(500).json({ error: ENV ? err : 1 });
             }
 
-            console.log(dbResults);
+            if (sensorsid === null) {
+                res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+            } else {
+                //set node to unavailable
+                const sqlQuery = `
+                    UPDATE
+                        sensors
+                    SET
+                        available = 0
+                    WHERE
 
-            //call the log function
+                        id = ?;
+                `
+                db.execute(sqlQuery, [sensorsid], (err) => {
+                    if (err) {
+                        return res.status(500).json({ error: ENV ? err : 1 });
+                    }
+                    //call the log function
 
-            res.status(200).json({ massage: "Shift updated successfully.", data: {} })
+                    res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+                })
+            }
         })
 
     })
 )
+
 
 //delete employee
-router.delete("/update/shift",
+router.delete("/deactivate/:id/:userId",
     [
-        check('minerId', 'Miner is required').not().isEmpty(),
-        check('username', 'Name of the user updating the employee is required').not().isEmpty(),
-        check('shift', 'The new shift is required').not().isEmpty()
+        check('id', 'Miner is required').escape().not().isEmpty(),
+        check('userId', 'UserId is required').escape().not().isEmpty()
     ],
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(404).json({ errors: errors.array() });
-        }
-        next()
-
-        //verifyToken(req, res, next)
-    },
+    validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
-        const id = req.body.minerId;
-        const username = req.body.username;
-        const shift = req.body.shift;
+        const { id, userId } = matchedData(req);
 
         const sqlQuery = `
-        UPDATE
-          miners
-            SET
-          shift = ?,
-          updated_by = ?,
-          last_updated = ?
+            UPDATE miners SET
+                sensorsid = null, 
+                shift = 'none',
+                updated_by = ?, 
+                last_updated = ?,
+                status = 2 
             WHERE
-          id = ?;
+                id = ?;
         `
-        db.execute(sqlQuery, [shift, username, getTimestamp(), id], (err, dbResults) => {
+        db.execute(sqlQuery, [userId, getTimestamp(), id], (err) => {
             if (err) {
-                return res.status(500).json({ error: ENV ? err : 01 });
+                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
             }
-
-            console.log(dbResults);
 
             //call the log function
 
-            res.status(200).json({ massage: "Shift updated successfully.", data: {} })
+            res.status(200).json({ message: "User deactivate successfully.", data: {} })
         })
 
     })
 )
-module.exports = router
+//delete employee
+router.delete("/delete/:id/:userId",
+    [
+        check('id', 'Miner is required').escape().not().isEmpty(),
+        check('userId', 'UserId is required').escape().not().isEmpty()
+    ],
+    validationErrorMiddleware,
+    expressAsyncHandler((req, res) => {
+        const { id, userId } = matchedData(req);
+
+        const sqlQuery = `
+            UPDATE miners SET
+                sensorsid = null, 
+                shift = 'none',
+                updated_by = ?, 
+                last_updated = ?,
+                status = 3 
+            WHERE
+                id = ?;
+        `
+        db.execute(sqlQuery, [userId, getTimestamp(), id], (err) => {
+            if (err) {
+                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
+            }
+
+            //call the log function
+
+            res.status(200).json({ message: "User deleted successfully.", data: {} })
+        })
+
+    })
+)
+
+module.exports = router;

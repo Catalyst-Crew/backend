@@ -24,7 +24,7 @@ router.post("/register",
     ], (req, res, next) => {
         const result = validationResult(req);
         if (!result.isEmpty()) {
-            return res.send({ massage: "Missing or invalid fields", data: result.array() });
+            return res.send({ message: "Missing or invalid fields", data: result.array() });
         }
         next();
     }
@@ -68,14 +68,14 @@ router.post("/register",
         db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
             async (err) => {
                 if (err) {
-                    return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
+                    return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 sendEmail(email,
                     "You have been granted access",
                     `Your new password is: ${pass}<br/>email: ${email}<br/>User ID:${id}<br/>Area ID: ${areaId}`, "new-users")
 
-                res.status(200).json({ massage: "User registerd successfully.", data: {} })
+                res.status(200).json({ message: "User registerd successfully.", data: {} })
             })
     }))
 
@@ -111,11 +111,11 @@ router.post("/",
       FROM
         users WHERE email = ?;`, [email], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 2 })
+                return res.status(500).json({ message: "Can not perform that action right now",error: process.env.IS_DEV === "true" ? err : 2 })
             }
 
             if (!dbResults[0]) {
-                return res.status(404).json({ massage: "User not found.", data: { email } })
+                return res.status(404).json({ message: "User not found.", data: { email } })
             }
 
             //Verify password from db with one from req
@@ -125,9 +125,9 @@ router.post("/",
 
                 //Remove password from the data
                 dbResults[0].password = "";
-                return res.status(200).json({ massage: "User loggedin successfully.", data: { token, ...dbResults[0] } })
+                return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0] } })
             }
-            res.status(401).json({ massage: "Invalid email or password." })
+            res.status(401).json({ message: "Invalid email or password." })
         })
     }))
 
@@ -146,10 +146,10 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], (err, dbResults) => {
 
             if (err) {
-                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 })
+                return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 })
             }
             if (!dbResults[0]) {
-                return res.status(404).json({ massage: "User not found.", data: { email } })
+                return res.status(404).json({ message: "User not found.", data: { email } })
             }
 
             //generate new password and update the user password in database then if sucessfull send the new password to user
@@ -163,15 +163,15 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
             WHERE email = ?;`,
                 [hashPassword(newPassword), "system", getTimestamp(), email], (err, dbResults) => {
                     if (err) {
-                        return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 2 })
+                        return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
                     }
 
                     if (dbResults.affectedRows > 0) {
                         sendEmail(email, "New password generated", `Your new password is: ${newPassword}`)
-                        return res.status(200).json({ massage: "Password reset successfully." })
+                        return res.status(200).json({ message: "Password reset successfully." })
                     }
 
-                    res.status(500).json({ massage: "Error updating password." })
+                    res.status(500).json({ message: "Error updating password." })
                 }
             )
 

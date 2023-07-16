@@ -8,11 +8,14 @@ const newToken = (userID = "") => sign({
 }, tokenKey);
 
 const verifyToken = (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1];
-    verify(token, tokenKey, (err) => {
-        if (err) return res.status(401);
-        next();
-    })
-}
+    const token = req.headers["x-access-token"];
+    verify(token, tokenKey, (err, verifiedToken) => {
+      if (err) {
+        return res.status(401).send({ message: "Unauthorized to perform that action" });
+      }
+      next();
+    });
+  };
+  
 
 module.exports = { newToken, verifyToken };

@@ -47,14 +47,16 @@ SET
 WHERE
   id = ?;
 
-UPDATE
-  sensors
-SET
-  access_pointsid = ?,
-  active = ?,
-  modified_by = ?
+UPDATE sensors SET 
+  access_pointsid = ?, 
+  active = ?, 
+  modified_by = ?, 
+  available = ?, 
+  deviceId = ? 
 WHERE
   id = ?;
+
+
 
 UPDATE
   users

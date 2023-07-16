@@ -8,6 +8,7 @@ const { db } = require("./src/utils/database");
 //Routes
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
+const sensors = require("./src/routes/sensors");
 
 const miners = require("./src/routes/miners");
 const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
@@ -38,6 +39,7 @@ if (!isDev) {
 app.use("/auth", auth);
 app.use("/miners", miners);
 app.use("/users", users);
+app.use("/sensors", sensors);
 app.all("/", (_, res) => {
     res.send();
 });
@@ -45,6 +47,7 @@ app.all("/", (_, res) => {
 //Error handler
 app.use((err, req, res, next) => {
     res.status(500).send({ massage: "Something went wrong" });
+    console.log(err);
 });
 
 //Start the server

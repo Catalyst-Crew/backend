@@ -30,42 +30,46 @@ INSERT INTO
 VALUES
   (?, ?, ?, ?, ?);
 
-INSERT INTO
-  miners (
-    id,
-    name,
-    usersid,
-    sensorsid,
-    shift,
-    created_by,
-    updated_by,
-    last_updated,
-    created,
-    usersid2
-  )
-VALUES
-  (
-    ?,
-    ?,
-    ?,
-    ?,
-    ?,
-    ?,
-    ?,
-    ?,
-    ?,
-    ?
-  );
+INSERT INTO miners
+  (id, 
+  name, 
+  sensorsid, 
+  shift, 
+  created_by, 
+  updated_by, 
+  last_updated, 
+  created, 
+  usersid, 
+  email) 
+VALUES 
+  (?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?);
 
-INSERT INTO
-  sensors (
-    id,
-    access_pointsid,
-    active,
-    modified_by
-  )
-VALUES
-  (?, ?, ?, ?);
+
+INSERT INTO sensors
+  (id, 
+  access_pointsid, 
+  active, 
+  modified_by, 
+  available, 
+  deviceId) 
+VALUES 
+  (?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?);
+
+
 
 INSERT INTO
   users (
