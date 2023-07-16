@@ -1,8 +1,6 @@
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-
-
 const getNewPassword = () => {
     const length = 16;
     const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$&?"';

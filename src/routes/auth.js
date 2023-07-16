@@ -6,6 +6,7 @@ const { check, validationResult } = require("express-validator")
 //Utils
 const sendEmail = require('../utils/email')
 const { newToken } = require('../utils/tokens')
+const { addLogToQueue } = require('../utils/logs')
 const { hashPassword, verifyPassword } = require('../utils/password')
 const { db, getNewPassword, getNewID, getTimestamp } = require('../utils/database')
 
@@ -32,48 +33,49 @@ router.post("/register",
         const { name, email, role, user, access, areaId } = req.body
 
         const sqlQuery = `INSERT INTO users (
-      id,
-      name,
-      role,
-      email,
-      password,
-      created_by,
-      updated_by,
-      last_updated,
-      created,
-      access,
-      areasid
-    )
-  VALUES
-    (
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?
-    );`
+            id,
+            name,
+            role,
+            email,
+            password,
+            created_by,
+            updated_by,
+            last_updated,
+            created,
+            access,
+            areasid
+            )
+        VALUES
+            (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+            );
+        `;
 
         const id = getNewID("USER-");
         const timestamp = getTimestamp();
-        const pass = getNewPassword()
-
-        process.env.IS_DEV === "true" && console.log(pass);
+        const pass = getNewPassword();
 
         db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
             async (err) => {
                 if (err) {
-                    return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
+                    return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 sendEmail(email,
                     "You have been granted access",
                     `Your new password is: ${pass}<br/>email: ${email}<br/>User ID:${id}<br/>Area ID: ${areaId}`, "new-users")
+
+                addLogToQueue(id, name, `User ${name} with email ${email}, role ${role} has been added by ${user} and has been granted '${access} access' to area ${areaId}`)
 
                 res.status(200).json({ message: "User registerd successfully.", data: {} })
             })
@@ -111,7 +113,7 @@ router.post("/",
       FROM
         users WHERE email = ?;`, [email], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ message: "Can not perform that action right now",error: process.env.IS_DEV === "true" ? err : 2 })
+                return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
             }
 
             if (!dbResults[0]) {
@@ -125,6 +127,9 @@ router.post("/",
 
                 //Remove password from the data
                 dbResults[0].password = "";
+
+                addLogToQueue(dbResults[0].id, dbResults[0].name, `User ${dbResults[0].name} with email ${dbResults[0].email} has logged in`)
+
                 return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0] } })
             }
             res.status(401).json({ message: "Invalid email or password." })
@@ -146,7 +151,7 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], (err, dbResults) => {
 
             if (err) {
-                return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 })
+                return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 })
             }
             if (!dbResults[0]) {
                 return res.status(404).json({ message: "User not found.", data: { email } })
@@ -157,17 +162,19 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
 
             db.execute(`
             UPDATE users SET 
-            password = ?, 
-            updated_by = ?, 
-            last_updated = ?
-            WHERE email = ?;`,
+                password = ?, 
+                updated_by = ?, 
+                last_updated = ?
+            WHERE 
+                email = ?;`,
                 [hashPassword(newPassword), "system", getTimestamp(), email], (err, dbResults) => {
                     if (err) {
-                        return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
+                        return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
                     }
 
                     if (dbResults.affectedRows > 0) {
                         sendEmail(email, "New password generated", `Your new password is: ${newPassword}`)
+                        addLogToQueue(dbResults[0].id, dbResults[0].name, `User ${dbResults[0].name} with email ${dbResults[0].email} has reset their password`)
                         return res.status(200).json({ message: "Password reset successfully." })
                     }
 

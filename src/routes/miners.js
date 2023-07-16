@@ -3,6 +3,7 @@ const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 const { verifyToken } = require('../utils/tokens');
+const { addLogToQueue } = require('../utils/logs');
 const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
@@ -98,7 +99,8 @@ router.post('/create',
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
-            console.log(dbResults)
+            //call the log function
+            addLogToQueue(userId, username, `Created a new employee with the name ${name}`)
 
             res.status(200).json({ message: "Employee added successfully.", data: {} })
         })
@@ -138,7 +140,8 @@ router.put("/:id",
             }
 
             if (sensorsid === null) {
-                res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+                addLogToQueue(updated_by, updated_by, `Updated the employee with the id ${id} with the sensor id ${sensorsid},  and shift ${shift}, and supervisor id ${supervisor_id}`)
+                res.status(200).json({ message: "Employee updated successfully.", data: {} })
             } else {
                 //set node to unavailable
                 const sqlQuery = `
@@ -155,15 +158,15 @@ router.put("/:id",
                         return res.status(500).json({ error: ENV ? err : 1 });
                     }
                     //call the log function
+                    addLogToQueue(updated_by, updated_by, `Updated the employee with the id ${id} with the sensor id ${sensorsid},  and shift ${shift}, and supervisor id ${supervisor_id}`)
 
-                    res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+                    res.status(200).json({ message: "Employee assigned sensor successfully.", data: {} })
                 })
             }
         })
 
     })
 )
-
 
 //delete employee
 router.delete("/deactivate/:id/:userId",
@@ -191,6 +194,7 @@ router.delete("/deactivate/:id/:userId",
             }
 
             //call the log function
+            addLogToQueue(userId, userId, `Deactivated the employee with the id ${id}`)
 
             res.status(200).json({ message: "User deactivate successfully.", data: {} })
         })
@@ -223,6 +227,7 @@ router.delete("/delete/:id/:userId",
             }
 
             //call the log function
+            addLogToQueue(userId, userId, `Deleted the employee with the id ${id}`)
 
             res.status(200).json({ message: "User deleted successfully.", data: {} })
         })

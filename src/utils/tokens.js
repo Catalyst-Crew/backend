@@ -9,7 +9,7 @@ const newToken = (userID = "") => sign({
 
 const verifyToken = (req, res, next) => {
     const token = req.headers["x-access-token"];
-    verify(token, tokenKey, (err, verifiedToken) => {
+    verify(token, tokenKey, (err, _) => {
       if (err) {
         return res.status(401).send({ message: "Unauthorized to perform that action" });
       }

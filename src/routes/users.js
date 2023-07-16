@@ -1,9 +1,10 @@
 
-const { Router } = require('express')
-const expressAsyncHandler = require('express-async-handler')
-const { check, validationResult, matchedData } = require("express-validator")
+const { Router } = require('express');
+const expressAsyncHandler = require('express-async-handler');
+const { check, validationResult, matchedData } = require("express-validator");
 
-const { db, getTimestamp } = require('../utils/database')
+const { addLogToQueue } = require('../utils/logs');
+const { db, getTimestamp } = require('../utils/database');
 
 const route = Router();
 
@@ -33,6 +34,8 @@ route.put('/:id',
                 if (err) {
                     return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
+
+                addLogToQueue(id, "User", `User ${id} updated by ${user}`);
 
                 if (dbResults.affectedRows) {
                     return res.status(200).json({ message: "User updated successfully" });

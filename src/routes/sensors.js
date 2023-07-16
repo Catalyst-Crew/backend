@@ -1,10 +1,12 @@
-const { Router } = require('express')
-const expressAsyncHandler = require('express-async-handler')
-const { check, validationResult } = require("express-validator")
+const { Router } = require('express');
+const expressAsyncHandler = require('express-async-handler');
+const { check, validationResult } = require("express-validator");
 
-const { db, getNewID, getTimestamp } = require('../utils/database');
+const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
+const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
+
 const ENV = process.env.IS_DEV === "true";
 
 const router = Router()
@@ -95,6 +97,8 @@ router.post('/create',
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
+            addLogToQueue(userId, "Sensor", `Sensor ${dbResults.insertId} created by ${userId}`);
+
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
         }
         )
@@ -156,6 +160,8 @@ router.put('/update',
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
+
+            addLogToQueue(updated_by, "Sensor", `Sensor ${id} updated by ${updated_by}`);
 
             res.status(200).json({ message: "Sensor updated successfully." })
         }
