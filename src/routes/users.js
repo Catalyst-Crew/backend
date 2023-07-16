@@ -12,7 +12,7 @@ route.put('/:id',
     (req, res, next) => {
         const result = validationResult(req);
         if (!result.isEmpty()) {
-            return res.status(400).json({ massage: "Missing or invalid fields", data: result.array() });
+            return res.status(400).json({ message: "Missing or invalid fields", data: result.array() });
         }
         next();
     },
@@ -31,11 +31,11 @@ route.put('/:id',
             [access, areaId, user, role, getTimestamp(), id],
             (err, dbResults) => {
                 if (err) {
-                    return res.status(500).json({massage: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
+                    return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 if (dbResults.affectedRows) {
-                    return res.status(200).json({ massage: "User updated successfully" });
+                    return res.status(200).json({ message: "User updated successfully" });
                 }
 
             }
@@ -68,28 +68,39 @@ route.get('/',
                 }
 
                 if (dbResults.length) {
-                    return res.status(200).json({ massage: "Users found", data: dbResults });
+                    return res.status(200).json({ message: "Users found", data: dbResults });
                 }
 
-                res.status(404).json({ massage: "No users found" });
+                res.status(404).json({ message: "No users found" });
             }
         )
     })
 )
 
+//get all users
+route.get('/supervisors',
+    expressAsyncHandler(async (_, res) => {
+        db.execute(`
+            SELECT
+                id,
+                name
+            FROM
+                users
+            WHERE
+                role = 'supervisor' AND access = 'granted';
+        `, (err, dbResults) => {
+            if (err) {
+                return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
+            }
 
+            if (dbResults.length) {
+                return res.status(200).json({ message: "Users found", data: dbResults });
+            }
 
-
-
-
-
-
-
-
-
-
-
-
-
+            res.status(202).json({ message: "No supervisors found" });
+        }
+        )
+    })
+)
 
 module.exports = route;
