@@ -54,15 +54,22 @@ VALUES
   ?);
 
 
-INSERT INTO
-  sensors (
-    id,
-    access_pointsid,
-    active,
-    modified_by
-  )
-VALUES
-  (?, ?, ?, ?);
+INSERT INTO sensors
+  (id, 
+  access_pointsid, 
+  active, 
+  modified_by, 
+  available, 
+  deviceId) 
+VALUES 
+  (?, 
+  ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?);
+
+
 
 INSERT INTO
   users (

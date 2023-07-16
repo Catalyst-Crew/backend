@@ -42,13 +42,16 @@ SELECT
 FROM
   miners;
 
-SELECT
-  id,
-  access_pointsid,
-  active,
-  modified_by
-FROM
+SELECT 
+  id, 
+  access_pointsid, 
+  active, 
+  modified_by, 
+  available, 
+  deviceId 
+FROM 
   sensors;
+
 
 SELECT
   id,
