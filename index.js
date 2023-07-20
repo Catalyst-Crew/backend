@@ -6,12 +6,12 @@ const express = require("express");
 const { db } = require("./src/utils/database");
 
 //Routes
+const logs = require("./src/routes/log");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
-const sensors = require("./src/routes/sensors");
-const logs = require("./src/routes/log");
-const settings = require("./src/routes/settings");
 const miners = require("./src/routes/miners");
+const sensors = require("./src/routes/sensors");
+const settings = require("./src/routes/settings");
 
 const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
