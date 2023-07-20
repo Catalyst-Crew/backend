@@ -26,13 +26,14 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 ))
 
 router.get('/', expressAsyncHandler(async (_, res) => {
-    db.query('SELECT * FROM logs', (err, result) => {
-        if (err) {
-            res.status(500).send({ message: err.message })
-        }
+    db.query(`SELECT * FROM logs ORDER BY timestamp DESC;`,
+        (err, result) => {
+            if (err) {
+                res.status(500).send({ message: err.message })
+            }
 
-        res.status(200).send(result)
-    })
+            res.status(200).send(result)
+        })
 }))
 
 router.post('/:id',
@@ -43,8 +44,12 @@ router.post('/:id',
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { id, selection } = matchedData(req);
-
-        db.query('SELECT * FROM logs', (err, result) => {
+        db.query(`
+            SELECT 
+                * 
+            FROM 
+                logs 
+        `, (err, result) => {
             if (err) {
                 res.status(500).send({ message: err.message })
             }
@@ -54,10 +59,8 @@ router.post('/:id',
             logs = selection.length > 0 ? result.filter(log => selection.includes(log.id)) : result;
 
             if (logs.length > 0) {
-                // file will be in /srs/logs
                 const filePath = path.join(__dirname, `../logs/log-export-${id}-${Date.now()}.csv`)
 
-                // write logs to csv file and send it to the user?
                 const csvWriter = createObjectCsvWriter({
                     path: filePath,
                     header: [
@@ -67,18 +70,16 @@ router.post('/:id',
                         { id: 'timestamp', title: 'Created_At' },
                         { id: 'massage', title: 'Message' },
                     ],
-                    recordDelimiter: '\r\n',
-                    alwaysQuote: true,
+                    recordDelimiter: '\r\n'
                 });
 
                 csvWriter.writeRecords(logs)
                     .then(() => {
-                        res.contentType("text/csv").download(filePath, (err) => {
+                        res.download(filePath, (err) => {
                             if (err) {
                                 return res.status(500).send({ message: err.message })
                             }
 
-                            // log the download
                             addLogToQueue(id, "Logs", `Downloaded ${logs.length} logs on ${getTimestamp()}`)
 
                             fs.unlinkSync(filePath)  //delete file
