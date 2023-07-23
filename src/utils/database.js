@@ -1,8 +1,38 @@
 const mysql = require("mysql2");
-const crypto = require("crypto")
+const crypto = require("crypto");
+const { createClient } = require("redis");
 
 //Create database connection
 const db = mysql.createPool(process.env.DB_URL);
+
+const CONNECTION = {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+    username: process.env.REDIS_USERNAME
+}
+
+const redisDb = createClient({
+    socket: CONNECTION,
+    password: CONNECTION.password,
+    database: "airmailer"
+});
+
+redisDb.on("error", (err) => {
+    console.log("RedisDB: ",err);
+});
+
+redisDb.on("connect", () => {
+    console.log("RedisDB: Connected");
+});
+
+redisDb.on("ready", () => {
+    console.log("RedisDB: Ready");
+});
+
+redisDb.on("end", () => {
+    console.log("RedisDB: Disconnected");
+});
 
 
 //Funtion returning an id using UUID
@@ -22,4 +52,4 @@ const getTimestamp = () => {
     return new Date(date.getTime() + offset);
 }
 
-module.exports = { db, getNewID, getNewPassword, getTimestamp }
+module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb }

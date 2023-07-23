@@ -1,13 +1,14 @@
 
-const { Router } = require('express')
-const expressAsyncHandler = require('express-async-handler')
-const { check, validationResult } = require("express-validator")
+const { Router } = require('express');
+const { check, matchedData } = require("express-validator");
+const expressAsyncHandler = require('express-async-handler');
 
 //Utils
-const sendEmail = require('../utils/email')
-const { newToken } = require('../utils/tokens')
-const { hashPassword, verifyPassword } = require('../utils/password')
-const { db, getNewPassword, getNewID, getTimestamp } = require('../utils/database')
+const sendEmail = require('../utils/email');
+const { newToken } = require('../utils/tokens');
+const { hashPassword, verifyPassword } = require('../utils/password');
+const { validationErrorMiddleware } = require('../utils/middlewares');
+const { db, getNewPassword, getNewID, getTimestamp, redisDb } = require('../utils/database');
 
 //Inti
 const router = Router()
@@ -21,13 +22,7 @@ router.post("/register",
     check("email")
         .isEmail()
         .withMessage("Invalid email provided")
-    ], (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            return res.send({ message: "Missing or invalid fields", data: result.array() });
-        }
-        next();
-    }
+    ], validationErrorMiddleware
     , expressAsyncHandler(async (req, res) => {
         const { name, email, role, user, access, areaId } = req.body
 
@@ -68,7 +63,7 @@ router.post("/register",
         db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
             async (err) => {
                 if (err) {
-                    return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
+                    return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 sendEmail(email,
@@ -86,13 +81,7 @@ router.post("/",
     check("email")
         .escape()
         .isEmail()
-        .withMessage("Invalid email")], (req, res, next) => {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(401).json({ errors: errors.array() });
-            }
-            next()
-        },
+        .withMessage("Invalid email")], validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { email, password } = req.body;
 
@@ -111,7 +100,7 @@ router.post("/",
       FROM
         users WHERE email = ?;`, [email], (err, dbResults) => {
             if (err) {
-                return res.status(500).json({ message: "Can not perform that action right now",error: process.env.IS_DEV === "true" ? err : 2 })
+                return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
             }
 
             if (!dbResults[0]) {
@@ -129,41 +118,79 @@ router.post("/",
             }
             res.status(401).json({ message: "Invalid email or password." })
         })
-    }))
+    })
+);
 
-router.post("/reset-password", check("email").escape().isEmail().withMessage("Invalid email"),
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(404).json({ errors: errors.array() });
-        }
-
-        next()
-    },
+router.get("/forgot-password/:email", check("email").escape().isEmail().withMessage("Invalid email"),
+    validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { email } = req.body;
-
+        redisDb.connect();
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], (err, dbResults) => {
 
             if (err) {
-                return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 })
+                return res.status(500).json({
+                    message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? () => {
+                        console.log(err);
+                        return err;
+                    } : 1
+                })
             }
             if (!dbResults[0]) {
                 return res.status(404).json({ message: "User not found.", data: { email } })
             }
 
-            //generate new password and update the user password in database then if sucessfull send the new password to user
-            const newPassword = getNewPassword();
+            const code = getRandomCode();
+
+            redisDb.set(email, code, "EX", 600, (err, reply) => {
+                if (err) {
+                    return res.status(500).json({
+                        message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? () => {
+                            console.log(err);
+                            return
+                        } : 2
+                    })
+                }
+                if (reply === "OK") {
+                    sendEmail(email, "Password reset code", `Your password reset code is: ${code}`)
+                    return res.status(200).json({ message: "Password reset code sent successfully." })
+                }
+                res.status(500).json({ message: "Error sending password reset code." })
+            }
+            )
+        })
+    })
+);
+
+router.patch("/forgot-password/:email/:code", [check("email").escape().isEmail().withMessage("Invalid email"),
+check("code").escape().notEmpty().withMessage("Invalid code"), check("password").escape().notEmpty().withMessage("Invalid password")],
+    validationErrorMiddleware,
+    expressAsyncHandler(async (req, res) => {
+        const { email, code, password } = matchedData(req);
+
+        redisDb.get(email, (err, reply) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? () => {
+                        console.log(err);
+                        return err;
+                    } : 1
+                })
+            }
+
+            if (reply !== code) {
+                return res.status(401).json({ message: "Invalid code." })
+            }
 
             db.execute(`
-            UPDATE users SET 
-            password = ?, 
-            updated_by = ?, 
+            UPDATE users SET
+            password = ?,
+            updated_by = ?,
             last_updated = ?
             WHERE email = ?;`,
-                [hashPassword(newPassword), "system", getTimestamp(), email], (err, dbResults) => {
+                [hashPassword(password), "system", getTimestamp(), email], (err, dbResults) => {
                     if (err) {
-                        return res.status(500).json({message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
+                        return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
                     }
 
                     if (dbResults.affectedRows > 0) {
@@ -174,9 +201,12 @@ router.post("/reset-password", check("email").escape().isEmail().withMessage("In
                     res.status(500).json({ message: "Error updating password." })
                 }
             )
-
         })
-    }))
+    })
+);
+
+
+
 
 module.exports = router
 
