@@ -21,16 +21,8 @@ redisDb.on("error", (err) => {
     console.log("RedisDB: ", err);
 });
 
-redisDb.on("connect", () => {
-    console.log("RedisDB: Connected");
-});
-
 redisDb.on("ready", () => {
     console.log("RedisDB: Ready");
-});
-
-redisDb.on("end", () => {
-    console.log("RedisDB: Disconnected");
 });
 
 
