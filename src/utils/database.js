@@ -25,7 +25,6 @@ redisDb.on("ready", () => {
     console.log("RedisDB: Ready");
 });
 
-
 //Funtion returning an id using UUID
 const getNewID = (prefix = "") => {
     return prefix + crypto.randomUUID();
@@ -43,4 +42,4 @@ const getTimestamp = () => {
     return new Date(date.getTime() + offset);
 }
 
-module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb }
+module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb };

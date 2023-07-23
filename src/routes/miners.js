@@ -3,6 +3,7 @@ const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 const { verifyToken } = require('../utils/tokens');
+const { addLogToQueue } = require('../utils/logs');
 const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
@@ -94,11 +95,15 @@ router.post('/create',
         `;
 
         db.execute(sqlQuery, [id, name, shift, username.toLowerCase(), username.toLowerCase(), timestamp, timestamp, userId, email], (err, dbResults) => {
-            if (err) {
+            if (err, dbResults) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
-            console.log(dbResults)
+            if (dbResults.affectedRows === 0) {
+                return res.status(500).json({ message: "Failed creating new employee, please try again.", error: ENV ? err : 1 });
+            }
+
+            addLogToQueue(id, username, `Employee created successfully by ${username} at ${timestamp} with id ${id} and name ${name} and shift ${shift} and email ${email}`);
 
             res.status(200).json({ message: "Employee added successfully.", data: {} })
         })
@@ -150,17 +155,21 @@ router.put("/:id",
 
                         id = ?;
                 `
-                db.execute(sqlQuery, [sensorsid], (err) => {
+                db.execute(sqlQuery, [sensorsid], (err, dbResults) => {
                     if (err) {
                         return res.status(500).json({ error: ENV ? err : 1 });
                     }
-                    //call the log function
 
-                    res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+                    if (dbResults.affectedRows === 0) {
+                        return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
+                    }
+
+                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by} at ${getTimestamp()} with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
+
+                    res.status(200).json({ message: "Employee updated successfully.", data: {} })
                 })
             }
         })
-
     })
 )
 
@@ -185,13 +194,16 @@ router.delete("/deactivate/:id/:userId",
             WHERE
                 id = ?;
         `
-        db.execute(sqlQuery, [userId, getTimestamp(), id], (err) => {
+        db.execute(sqlQuery, [userId, getTimestamp(), id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
             }
 
-            //call the log function
+            if (dbResults.affectedRows === 0) {
+                return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
+            }
 
+            addLogToQueue(id, userId, `Employee deactivated successfully by ${userId} at ${getTimestamp()} with id ${id}`);
             res.status(200).json({ message: "User deactivate successfully.", data: {} })
         })
 
@@ -217,16 +229,19 @@ router.delete("/delete/:id/:userId",
             WHERE
                 id = ?;
         `
-        db.execute(sqlQuery, [userId, getTimestamp(), id], (err) => {
+        db.execute(sqlQuery, [userId, getTimestamp(), id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
             }
 
-            //call the log function
+            if (dbResults.affectedRows === 0) {
+                return res.status(500).json({ message: "Failed deleting employee, please try again.", error: ENV ? err : 1 });
+            }
+
+            addLogToQueue(id, userId, `Employee deleted successfully by ${userId} at ${getTimestamp()} with id ${id}`);
 
             res.status(200).json({ message: "User deleted successfully.", data: {} })
         })
-
     })
 )
 
