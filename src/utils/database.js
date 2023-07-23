@@ -15,11 +15,10 @@ const CONNECTION = {
 const redisDb = createClient({
     socket: CONNECTION,
     password: CONNECTION.password,
-    database: "airmailer"
 });
 
 redisDb.on("error", (err) => {
-    console.log("RedisDB: ",err);
+    console.log("RedisDB: ", err);
 });
 
 redisDb.on("connect", () => {
