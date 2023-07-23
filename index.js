@@ -3,7 +3,7 @@ const cors = require("cors");
 const logger = require('morgan')
 const express = require("express");
 
-const { db } = require("./src/utils/database");
+const { db, redisDb } = require("./src/utils/database");
 
 //Routes
 const logs = require("./src/routes/log");
@@ -28,6 +28,7 @@ app.use([
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
 // //Connect to Db
+redisDb.connect(); 
 const isDev = process.env.IS_DEV === "true" ? true : false;
 
 if (!isDev) {
