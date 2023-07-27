@@ -9,9 +9,10 @@ const { db } = require("./src/utils/database");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
 const sensors = require("./src/routes/sensors");
+const logs = require("./src/routes/log");
 const settings = require("./src/routes/settings");
-
 const miners = require("./src/routes/miners");
+
 const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
 const app = express();
@@ -37,10 +38,11 @@ if (!isDev) {
 }
 
 //Routes here
-app.use("/auth", auth);
+app.use("/sensors", sensors);
 app.use("/miners", miners);
 app.use("/users", users);
-app.use("/sensors", sensors);
+app.use("/logs", logs);
+app.use("/auth", auth);
 app.use("/settings", settings);
 app.use("/accessPoints", accessPoints);
 app.all("/", (_, res) => {
