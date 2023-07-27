@@ -1,10 +1,15 @@
-const { Router } = require('express')
-const expressAsyncHandler = require('express-async-handler')
-const { check, validationResult } = require("express-validator")
+const { Router } = require('express');
+const expressAsyncHandler = require('express-async-handler');
+const { check, validationResult } = require("express-validator");
 
-const { db, getNewID, getTimestamp } = require('../utils/database');
+const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
+const { addLogToQueue } = require('../utils/logs');
+const { verifyToken } = require('../utils/tokens');
+const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
+
+
 const ENV = process.env.IS_DEV === "true";
 
 const router = Router()
@@ -81,10 +86,10 @@ router.post('/create',
         );`;
 
         const sqlParams = [
-            getNewID(), // generated
-            deviceId ? 1 : 0, // generated
-            timestamp, // generated
-            timestamp, // generated
+            getNewID(),
+            deviceId ? 1 : 0,
+            timestamp,
+            timestamp,
             userId,
             access_pointsid,
             deviceId ? deviceId : null,
@@ -95,15 +100,19 @@ router.post('/create',
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
+            if (dbResults.affectedRows === 0) {
+                return res.status(202).json({ message: "Sensor not created." });
+            }
+
+            addLogToQueue(userId, "system", `Sensor created successfully by ${userId} at ${timestamp} with id ${dbResults.insertId} and access_pointsid ${access_pointsid} and deviceid ${deviceId}`);
+
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
-        }
-        )
+        })
     })
 )
 
 // PUT /update sensor
 router.put('/update',
-
     [
         check('id', 'ID is required').escape().not().isEmpty(),
         check('name', 'Name is required').escape().not().isEmpty(),
@@ -157,11 +166,15 @@ router.put('/update',
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
+            if (dbResults.affectedRows === 0) {
+                return res.status(202).json({ message: "Sensor not updated." });
+            }
+
+            addLogToQueue(updated_by, "system", `Sensor updated successfully by ${updated_by} at ${getTimestamp()} with id ${id} and name ${name} and location ${location} and type ${type} and ip ${ip} and port ${port} and available ${available} and active ${active}`);
+
             res.status(200).json({ message: "Sensor updated successfully." })
-        }
-        )
-    }
-    )
+        })
+    })
 )
 
 module.exports = router
