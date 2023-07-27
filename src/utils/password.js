@@ -1,7 +1,5 @@
-const bcrypt = require('bcrypt');
 const saltRounds = 10;
-
-
+const bcrypt = require('bcrypt');
 
 const getNewPassword = () => {
     const length = 16;
@@ -22,4 +20,4 @@ const verifyPassword = (password, dbPassword) => {
     return bcrypt.compareSync(password, dbPassword);
 }
 
-module.exports = { getNewPassword, hashPassword, verifyPassword }
+module.exports = { getNewPassword, hashPassword, verifyPassword };

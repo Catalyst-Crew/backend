@@ -3,7 +3,8 @@ const { Router } = require('express')
 const expressAsyncHandler = require('express-async-handler')
 const { check, validationResult, matchedData } = require("express-validator")
 
-const { db, getTimestamp } = require('../utils/database')
+const { addLogToQueue } = require('../utils/logs');
+const { db, getTimestamp } = require('../utils/database');
 
 const route = Router();
 
@@ -35,6 +36,8 @@ route.put('/:id',
                 }
 
                 if (dbResults.affectedRows) {
+                    addLogToQueue(id, "User", `User updated successfully by ${user} at ${getTimestamp()} with id ${id} and role ${role} and access ${access} and areaId ${areaId}`);
+
                     return res.status(200).json({ message: "User updated successfully" });
                 }
 

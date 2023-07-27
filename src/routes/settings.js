@@ -4,12 +4,12 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
+const { addLogToQueue } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
 
 const router = Router();
-
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
@@ -43,6 +43,10 @@ router.get('/:usersid',
         db.execute(sqlQuery, [usersid], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
+            }
+
+            if (dbResults.length === 0) {
+                return res.status(202).json({ message: "No settings found" });
             }
 
             res.status(200).json(dbResults[0])
@@ -79,6 +83,8 @@ router.put('/:usersid',
             if (dbResults.affectedRows < 1) {
                 return res.status(202).json({ message: "Settings not changed" })
             }
+
+            addLogToQueue(usersid, "Settings", `Settings updated successfully by ${usersid} at ${getTimestamp()} with appNotifications ${app} and emailNotifications ${email} and darkMode ${darkMode}`);
 
             res.status(200).json({ message: "Settings updated successfully" })
         })

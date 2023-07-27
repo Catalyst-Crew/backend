@@ -1,7 +1,6 @@
 const nodemailer = require("nodemailer");
 
 async function sendEmail(reciever = "", subject = "New massage", massage = "", emailAlias = "no-reply") {
-    
     const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_SERVER,
         port: process.env.EMAIL_PORT,
@@ -19,15 +18,11 @@ async function sendEmail(reciever = "", subject = "New massage", massage = "", e
             subject,
             html: massage
         });
-
         return true
-
     } catch (error) {
-
         process.env.IS_DEV === "true" && console.log(error);
         return false
-
     }
 }
 
-module.exports = sendEmail
+module.exports = sendEmail;

@@ -46,4 +46,4 @@ async function addLogToQueue(generatee_id, generatee_name, massage) {
 //Example of how you use the logger 
 //addLogToQueue("TEST-123456789", "Test", "This is a test massage")
 
-module.exports = { worker, addLogToQueue }
+module.exports = { worker, addLogToQueue };
