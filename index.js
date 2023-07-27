@@ -42,6 +42,7 @@ app.use("/miners", miners);
 app.use("/users", users);
 app.use("/sensors", sensors);
 app.use("/settings", settings);
+app.use("/accessPoints", accessPoints);
 app.all("/", (_, res) => {
     res.send();
 });
