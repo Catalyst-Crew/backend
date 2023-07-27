@@ -132,7 +132,7 @@ router.post("/",
                     dbResults[0].password = "";
 
                     //Add log to queue
-                    addLogToQueue(dbResults[0].id, "User", "User loggedin successfully");
+                    addLogToQueue(dbResults[0].id, dbResults[0].name, `User loggedin successfully${dbResults[0].email}`);
 
                     return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0] } })
                 }
