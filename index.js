@@ -46,7 +46,7 @@ app.use("/users", users);
 app.use("/logs", logs);
 app.use("/auth", auth);
 app.use("/settings", settings);
-app.use("/accesspoints", accessPoints);
+app.use("/access-points", accessPoints);
 app.all("/", (_, res) => {
     res.send();
 });
