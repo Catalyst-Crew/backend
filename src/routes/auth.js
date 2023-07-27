@@ -59,9 +59,7 @@ router.post("/register",
 
         const id = getNewID("USER-");
         const timestamp = getTimestamp();
-        const pass = getNewPassword()
-
-        process.env.IS_DEV === "true" && console.log(pass);
+        const pass = getNewPassword();
 
         db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
             async (err) => {

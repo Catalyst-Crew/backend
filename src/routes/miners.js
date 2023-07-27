@@ -4,6 +4,7 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { verifyToken } = require('../utils/tokens');
 const { addLogToQueue } = require('../utils/logs');
+const { addLogToQueue } = require('../utils/logs');
 const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
@@ -143,7 +144,8 @@ router.put("/:id",
             }
 
             if (sensorsid === null) {
-                res.status(200).json({ message: "Sensor id updated successfully.", data: {} })
+                addLogToQueue(updated_by, updated_by, `Updated the employee with the id ${id} with the sensor id ${sensorsid},  and shift ${shift}, and supervisor id ${supervisor_id}`)
+                res.status(200).json({ message: "Employee updated successfully.", data: {} })
             } else {
                 //set node to unavailable
                 const sqlQuery = `
@@ -172,7 +174,6 @@ router.put("/:id",
         })
     })
 )
-
 
 //delete employee
 router.delete("/deactivate/:id/:userId",
