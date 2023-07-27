@@ -4,8 +4,6 @@ const { check, validationResult } = require("express-validator");
 
 const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
-const { verifyToken } = require('../utils/tokens');
 const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 

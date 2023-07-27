@@ -4,7 +4,6 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { verifyToken } = require('../utils/tokens');
 const { addLogToQueue } = require('../utils/logs');
-const { addLogToQueue } = require('../utils/logs');
 const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
