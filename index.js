@@ -12,6 +12,7 @@ const users = require("./src/routes/users");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const settings = require("./src/routes/settings");
+const dasboard = require("./src/routes/dashboard");
 const accessPoints = require("./src/routes/accessPoints");
 
 const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
@@ -47,6 +48,7 @@ app.use("/logs", logs);
 app.use("/auth", auth);
 app.use("/settings", settings);
 app.use("/access-points", accessPoints);
+app.use("/dashboard", dasboard);
 app.all("/", (_, res) => {
     res.send();
 });
