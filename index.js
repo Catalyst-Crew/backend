@@ -31,12 +31,12 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
 // //Connect to Db
 redisDb.connect(); 
-const isDev = process.env.IS_DEV === "true" ? true : false;
+const isDev = process.env.IS_DEV === "true";
 
 if (!isDev) {
     db.getConnection((err) => {
         if (err) throw err;
-        //console.log("Database Connected");
+        console.log("Database Connected");
     })
 }
 
