@@ -1,12 +1,15 @@
 {
-    "cleanUrls": true,
-    "installCommand": "npm install",
-    "trailingSlash": true,
-
+    "version": 2,
     "builds": [
         {
-            "src": "index.js",
+            "src": "./index.js",
             "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/"
         }
     ]
 }
