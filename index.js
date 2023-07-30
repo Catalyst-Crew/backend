@@ -50,7 +50,7 @@ app.use("/settings", settings);
 app.use("/access-points", accessPoints);
 app.use("/dashboard", dasboard);
 app.all("/", (_, res) => {
-    res.send();
+    res.send("OK");
 });
 
 //Error handler
