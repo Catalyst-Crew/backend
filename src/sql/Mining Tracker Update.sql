@@ -1,75 +1,111 @@
-UPDATE
-  access_points
-SET
-  areasid = ?
+UPDATE access SET 
+  id_prefix = ?, 
+  name = ? 
 WHERE
   id = ?;
-
-UPDATE
-  alerts
-SET
-  name = ?,
-  sensorsid = ?,
-  active = ?,
-  timestamp = ?
+UPDATE access_points SET 
+  id_prefix = ?, 
+  area_id = ?, 
+  name = ?, 
+  lat = ?, 
+  long = ? 
 WHERE
   id = ?;
-
-UPDATE
-  areas
-SET
-  name = ?
+UPDATE announcements SET 
+  id_prefix = ?, 
+  usersid = ?, 
+  name = ?, 
+  message = ?, 
+  created_at = ? 
 WHERE
   id = ?;
-
-UPDATE
-  measurements
-SET
-  sensorsid = ?,
-  access_pointsid = ?,
-  timestamp = ?,
-  location = ?
+UPDATE areas SET 
+  id_prefix = ?, 
+  name = ?, 
+  lat = ?, 
+  long = ? 
 WHERE
   id = ?;
-
-UPDATE
-  miners
-SET
-  name = ?,
-  usersid = ?,
-  sensorsid = ?,
-  shift = ?,
-  created_by = ?,
-  updated_by = ?,
-  last_updated = ?,
-  created = ?,
-  usersid2 = ?
+UPDATE logs SET 
+  id_prefix = ?, 
+  loger_id = ?, 
+  loger_name = ?, 
+  created_at = ?, 
+  message = ? 
 WHERE
   id = ?;
-
+UPDATE measurements SET 
+  id_prefix = ?, 
+  sensor_id = ?, 
+  access_point_id = ?, 
+  created_at = ?, 
+  location = ?, 
+  other_data = ? 
+WHERE
+  id = ?;
+UPDATE miners SET 
+  id_prefix = ?, 
+  name = ?, 
+  email = ?, 
+  status = ?, 
+  created_at = ?, 
+  created_by = ?, 
+  updated_at = ?, 
+  updated_by = ?, 
+  user_id = ?, 
+  shift_id = ?, 
+  sensor_id = ? 
+WHERE
+  id = ?;
+UPDATE sensor_alerts SET 
+  id = ?, 
+  id_prefix = ?, 
+  sensor_id = ?, 
+  name = ?, 
+  status = ?, 
+  created_at = ? 
+WHERE
+  ;
 UPDATE sensors SET 
-  access_pointsid = ?, 
-  active = ?, 
-  modified_by = ?, 
+  id_prefix = ?, 
+  status = ?, 
+  device_id = ?, 
   available = ?, 
-  deviceId = ? 
+  updated_by = ?, 
+  updated_at = ?, 
+  created_by = ?, 
+  created_at = ? 
+WHERE
+  id = ?;
+UPDATE settings SET 
+  app_notifications = ?, 
+  email_notifications = ?, 
+  dark_mode = ? 
+WHERE
+  user_id = ?;
+UPDATE shifts SET 
+  id_prefix = ?, 
+  name = ? 
+WHERE
+  id = ?;
+UPDATE user_roles SET 
+  id_prefix = ?, 
+  name = ? 
+WHERE
+  id = ?;
+UPDATE users SET 
+  id_prefix = ?, 
+  name = ?, 
+  email = ?, 
+  password = ?, 
+  user_role_id = ?, 
+  created_by = ?, 
+  created_at = ?, 
+  updated_by = ?, 
+  updated_at = ?, 
+  phone = ?, 
+  access_id = ?, 
+  access_point_id = ? 
 WHERE
   id = ?;
 
-
-
-UPDATE
-  users
-SET
-  name = ?,
-  role = ?,
-  email = ?,
-  password = ?,
-  created_by = ?,
-  updated_by = ?,
-  last_updated = ?,
-  created = ?,
-  access = ?,
-  areasid = ?
-WHERE
-  id = ?;

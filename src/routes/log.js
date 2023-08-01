@@ -34,7 +34,7 @@ router.get('/', expressAsyncHandler(async (_, res) => {
 
             res.status(200).send(result)
         })
-}))
+}));
 
 router.post('/:id',
     [

@@ -1,69 +1,27 @@
-SELECT
-  id,
-  areasid
-FROM
-  access_points;
+SELECT id, id_prefix, name 
+  FROM access;
+SELECT id, id_prefix, area_id, name, lat, long 
+  FROM access_points;
+SELECT id, id_prefix, usersid, name, message, created_at 
+  FROM announcements;
+SELECT id, id_prefix, name, lat, long 
+  FROM areas;
+SELECT id, id_prefix, loger_id, loger_name, created_at, message 
+  FROM logs;
+SELECT id, id_prefix, sensor_id, access_point_id, created_at, location, other_data 
+  FROM measurements;
+SELECT id, id_prefix, name, email, status, created_at, created_by, updated_at, updated_by, user_id, shift_id, sensor_id 
+  FROM miners;
+SELECT id, id_prefix, sensor_id, name, status, created_at 
+  FROM sensor_alerts;
+SELECT id, id_prefix, status, device_id, available, updated_by, updated_at, created_by, created_at 
+  FROM sensors;
+SELECT user_id, app_notifications, email_notifications, dark_mode 
+  FROM settings;
+SELECT id, id_prefix, name 
+  FROM shifts;
+SELECT id, id_prefix, name 
+  FROM user_roles;
+SELECT id, id_prefix, name, email, password, user_role_id, created_by, created_at, updated_by, updated_at, phone, access_id, access_point_id 
+  FROM users;
 
-SELECT
-  id,
-  name,
-  sensorsid,
-  active,
-  timestamp
-FROM
-  alerts;
-
-SELECT
-  id,
-  name
-FROM
-  areas;
-
-SELECT
-  id,
-  sensorsid,
-  access_pointsid,
-  timestamp,
-  location
-FROM
-  measurements;
-
-SELECT
-  id,
-  name,
-  usersid,
-  sensorsid,
-  shift,
-  created_by,
-  updated_by,
-  last_updated,
-  created,
-  usersid2
-FROM
-  miners;
-
-SELECT 
-  id, 
-  access_pointsid, 
-  active, 
-  modified_by, 
-  available, 
-  deviceId 
-FROM 
-  sensors;
-
-
-SELECT
-  id,
-  name,
-  role,
-  email,
-  password,
-  created_by,
-  updated_by,
-  last_updated,
-  created,
-  access,
-  areasid
-FROM
-  users;
