@@ -8,10 +8,9 @@ datasource db {
 }
 
 model access {
-  id        Int     @id @default(autoincrement())
-  id_prefix String  @default("acc-") @db.Char(5)
-  name      Int
-  users     users[]
+  id        Int    @id @default(autoincrement())
+  id_prefix String @default("acc-") @db.Char(5)
+  name      String @db.Char(10)
 }
 
 model access_points {
@@ -34,9 +33,6 @@ model announcements {
   name       String   @db.Char(255)
   message    String?  @default("No Message") @db.VarChar(255)
   created_at DateTime @default(now()) @db.DateTime(0)
-  users      users    @relation(fields: [usersid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKannounceme740387")
-
-  @@index([usersid], map: "FKannounceme740387")
 }
 
 model areas {
@@ -46,7 +42,6 @@ model areas {
   lat           Decimal         @db.Decimal(9, 6)
   longitude     Decimal         @db.Decimal(9, 6)
   access_points access_points[]
-  users         users[]
 }
 
 model logs {
@@ -88,7 +83,6 @@ model miners {
   sensor_id  Int
   sensors    sensors  @relation(fields: [sensor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKminers201161")
   shifts     shifts   @relation(fields: [shift_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKminers229400")
-  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKminers594447")
 
   @@index([sensor_id], map: "FKminers201161")
   @@index([shift_id], map: "shift_id")
@@ -132,7 +126,6 @@ model settings {
   app_notifications   Boolean @default(true)
   email_notifications Boolean @default(true)
   dark_mode           Boolean @default(false)
-  users               users   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "FKsettings81676")
 }
 
 model shifts {
@@ -143,34 +136,23 @@ model shifts {
 }
 
 model user_roles {
-  id        Int     @id @default(autoincrement()) @db.TinyInt
-  id_prefix String  @default("rol-") @db.Char(255)
-  name      String  @default("Day") @db.Char(10)
-  users     users[]
+  id        Int    @id @default(autoincrement())
+  id_prefix String @default("rol-") @db.Char(5)
+  name      String @db.Char(10)
 }
 
 model users {
-  id              Int             @id @default(autoincrement())
-  id_prefix       String          @default("user-") @db.Char(5)
-  name            String          @default("No Name") @db.Char(20)
-  email           String          @unique(map: "email") @default("system@email.com") @db.Char(100)
-  password        String          @db.VarChar(255)
-  user_role_id    Int             @db.TinyInt
-  created_by      String          @default("System") @db.Char(20)
-  created_at      DateTime        @default(now()) @db.DateTime(0)
-  updated_by      String          @default("System") @db.Char(20)
-  updated_at      DateTime        @default(now()) @db.DateTime(0)
-  phone           String          @db.Char(11)
-  access_id       Int
-  access_point_id Int
-  announcements   announcements[]
-  miners          miners[]
-  settings        settings?
-  areas           areas           @relation(fields: [access_point_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKusers375527")
-  access          access          @relation(fields: [access_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKusers50369")
-  user_roles      user_roles      @relation(fields: [user_role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKusers895240")
-
-  @@index([access_point_id], map: "FKusers375527")
-  @@index([access_id], map: "FKusers50369")
-  @@index([user_role_id], map: "FKusers895240")
+  id           Int      @id @default(autoincrement())
+  id_prefix    String   @default("user-") @db.Char(5)
+  name         String   @default("No Name") @db.Char(20)
+  email        String   @unique(map: "email") @default("system@email.com") @db.Char(100)
+  password     String   @db.VarChar(255)
+  user_role_id Int      @db.TinyInt
+  created_by   String   @default("System") @db.Char(20)
+  created_at   DateTime @default(now()) @db.DateTime(0)
+  updated_by   String   @default("System") @db.Char(20)
+  updated_at   DateTime @default(now()) @db.DateTime(0)
+  phone        String   @db.Char(11)
+  access_id    Int
+  area_id      Int
 }
