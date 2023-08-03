@@ -10,27 +10,28 @@ const CONNECTION = {
 
 const worker = new Worker('logger',
     async job => {
-
-        await pDB.logs.create({
+        pDB.logs.create({
             data: {
-                loger_id: job.data.generatee_id,
-                loger_name: job.data.generatee_name,
-                message: job.data.massage,
+                loger_id: job.data.generatee_id.toString(),
+                loger_name: job.data.generatee_name.toString(),
+                message: job.data.massage.toString(),
             }
-        })
+        });
     }, {
     connection: CONNECTION
 });
+
+worker.on('failed', (job, err) => {
+    console.log(`Job ${job.id} failed with error ${err.message}`);
+});
+
 
 const myQueue = new Queue('logger', {
     connection: CONNECTION
 });
 
-async function addLogToQueue(generatee_id, generatee_name, massage) {
+function addLogToQueue(generatee_id, generatee_name, massage) {
     myQueue.add('log', { generatee_id, generatee_name, massage });
 }
-
-//Example of how you use the logger 
-//addLogToQueue("TEST-123456789", "Test", "This is a test massage")
 
 module.exports = { worker, addLogToQueue };
