@@ -1,5 +1,5 @@
+const { pDB } = require('./database');
 const { Worker, Queue } = require('bullmq');
-const { db, getNewID, getTimestamp } = require('./database');
 
 const CONNECTION = {
     host: process.env.REDIS_HOST,
@@ -10,27 +10,14 @@ const CONNECTION = {
 
 const worker = new Worker('logger',
     async job => {
-        db.execute(`
-        INSERT INTO logs
-        (
-            id, 
-            generatee_id, 
-            generatee_name, 
-            timestamp, 
-            massage
-        ) 
-        VALUES 
-        (
-            ?, 
-            ?, 
-            ?, 
-            ?, 
-            ?
-        );`,
-            [getNewID("LOG-"), job.data.generatee_id, job.data.generatee_name, getTimestamp(), job.data.massage],
-            (err) => {
-                if (err) return process.env.IS_DEV === "true" ? console.log(err) : "Logging failed due to database error";
-            })
+
+        await pDB.logs.create({
+            data: {
+                loger_id: job.data.generatee_id,
+                loger_name: job.data.generatee_name,
+                message: job.data.massage,
+            }
+        })
     }, {
     connection: CONNECTION
 });
