@@ -8,7 +8,7 @@ UPDATE access_points SET
   area_id = ?, 
   name = ?, 
   lat = ?, 
-  long = ? 
+  longitude = ? 
 WHERE
   id = ?;
 UPDATE announcements SET 
@@ -23,7 +23,7 @@ UPDATE areas SET
   id_prefix = ?, 
   name = ?, 
   lat = ?, 
-  long = ? 
+  longitude = ? 
 WHERE
   id = ?;
 UPDATE logs SET 
@@ -58,14 +58,13 @@ UPDATE miners SET
 WHERE
   id = ?;
 UPDATE sensor_alerts SET 
-  id = ?, 
   id_prefix = ?, 
   sensor_id = ?, 
   name = ?, 
   status = ?, 
   created_at = ? 
 WHERE
-  ;
+  id = ?;
 UPDATE sensors SET 
   id_prefix = ?, 
   status = ?, 
@@ -105,7 +104,7 @@ UPDATE users SET
   updated_at = ?, 
   phone = ?, 
   access_id = ?, 
-  access_point_id = ? 
+  area_id = ? 
 WHERE
   id = ?;
 

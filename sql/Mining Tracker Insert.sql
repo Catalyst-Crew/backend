@@ -12,7 +12,7 @@ INSERT INTO access_points
   area_id, 
   name, 
   lat, 
-  long) 
+  longitude) 
 VALUES 
   (?, 
   ?, 
@@ -39,7 +39,7 @@ INSERT INTO areas
   id_prefix, 
   name, 
   lat, 
-  long) 
+  longitude) 
 VALUES 
   (?, 
   ?, 
@@ -175,7 +175,7 @@ INSERT INTO users
   updated_at, 
   phone, 
   access_id, 
-  access_point_id) 
+  area_id) 
 VALUES 
   (?, 
   ?, 
