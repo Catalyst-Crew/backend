@@ -34,7 +34,7 @@ router.get('/', expressAsyncHandler(async (_, res) => {
 
             res.status(200).send(result)
         })
-}))
+}));
 
 router.post('/:id',
     [
@@ -51,7 +51,7 @@ router.post('/:id',
                 logs 
         `, (err, result) => {
             if (err) {
-                res.status(500).send({ message: err.message })
+                res.status(500).send({ message: "Can not perform that action right now #0", data: err.message })
             }
 
             let logs = []
@@ -77,15 +77,17 @@ router.post('/:id',
                     .then(() => {
                         res.download(filePath, (err) => {
                             if (err) {
-                                return res.status(500).send({ message: err.message })
+                                return res.status(500).send({ message: "Can not perform that action right now #1", data: err.message })
                             }
 
                             addLogToQueue(id, "Logs", `Downloaded ${logs.length} logs on ${getTimestamp()}`)
 
-                            fs.unlinkSync(filePath)  //delete file
+                            return fs.unlinkSync(filePath)  //delete file
                         })
-                    });
-                return;
+                    }).catch(err => {
+                        return res.status(500).send({ message: "Can not perform that action now #2", data: err.message })
+                    })
+
             }
             res.status(404).send({ message: "No logs found" })
         })

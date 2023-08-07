@@ -7,137 +7,160 @@ const expressAsyncHandler = require('express-async-handler');
 const sendEmail = require('../utils/email');
 const { addLogToQueue } = require('../utils/logs');
 const { newToken, getRandomCode } = require('../utils/tokens');
+const { db, getNewPassword, redisDb } = require('../utils/database');
 const { hashPassword, verifyPassword } = require('../utils/password');
 const { validationErrorMiddleware } = require('../utils/middlewares');
-const { db, getNewPassword, getNewID, getTimestamp, redisDb } = require('../utils/database');
 
 //Inti
 const router = Router();
 
+const IS_DEV = process.env.IS_DEV === "true";
+
 router.post("/register",
-    [check(["name", "email", "role", "user", "access", "areaId"])
-        .notEmpty()
-        .escape()
-        .withMessage("Please make sure all fields are present"),
-    check("email")
-        .isEmail()
-        .withMessage("Invalid email provided")
+    [
+        check("name").escape().notEmpty().withMessage("Invalid name"),
+        check("email").escape().isEmail().withMessage("Invalid email"),
+        check("role").isNumeric().notEmpty().withMessage("Invalid role"),
+        check("access").isNumeric().notEmpty().withMessage("Invalid access"),
+        check("areaId").isNumeric().notEmpty().withMessage("Invalid areaId"),
+        check("user").escape().notEmpty().withMessage("Invalid user"),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { name, email, role, user, access, areaId } = req.body
+        const { name, email, role, user, access, areaId } = matchedData(req);
 
-        const sqlQuery = `
-        INSERT INTO 
-        users (
-            id,
-            name,
-            role,
-            email,
-            password,
-            created_by,
-            updated_by,
-            last_updated,
-            created,
-            access,
-            areasid
-        )
-        VALUES
-            (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-            );`;
+        db.execute(`SELECT email FROM users WHERE email = ?;`, [email], async (err, dbResults) => {
 
-        const id = getNewID("USER-");
-        const timestamp = getTimestamp();
-        const pass = getNewPassword();
+            if (err) {
+                return res.status(500).json({
+                    message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1
+                })
+            }
 
-        db.execute(sqlQuery, [id, name, role, email, hashPassword(pass), user, user, timestamp, timestamp, access, areaId],
-            async (err) => {
-                if (err) {
-                    return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1 });
-                }
+            if (dbResults[0]) {
+                return res.status(409).json({ message: "User already exists.", data: { email } })
+            }
 
-                sendEmail(email,
-                    "You have been granted access",
-                    `Your new password is: ${pass}<br/>email: ${email}<br/>User ID:${id}<br/>Area ID: ${areaId}`, "new-users")
+            const pass = getNewPassword();
 
-                addLogToQueue(id, user, `User registered successfully by ${user} with email ${email} and role ${role} and access ${access} and areaId ${areaId}.`);
+            db.execute(`
+                INSERT INTO
+                    users (
+                        name,
+                        email,
+                        password,
+                        user_role_id,
+                        created_by,
+                        updated_by,
+                        access_id,
+                        area_id,
+                        phone
+                    )
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ""
+                );`,
+                [name, email, hashPassword(pass), role, user, user, access, areaId],
 
-                res.status(200).json({ message: "User registerd successfully.", data: {} })
-            })
-    }))
+                expressAsyncHandler(async (err, dbResults) => {
+                    if (err) {
+                        if (IS_DEV) {
+                            console.log("Error creating user: ", err)
+                        }
+                        return res.status(500).json({ message: "Error creating user." })
+                    }
+
+                    sendEmail(email,
+                        "You have been granted access",
+                        `Your new password is: ${pass}<br/>email: ${email}<br/>
+                        User ID: use-${dbResults.insertId}<br/>Area ID: are-${areaId}`, "new-users"
+                    )
+
+                    addLogToQueue(dbResults.insertId, user, `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.`);
+
+                    res.status(200).json({ message: "User registerd successfully.", data: IS_DEV ? dbResults : {} })
+
+                })
+            )
+        })
+    })
+);
 
 router.post("/",
-    [check("email", "password")
-        .notEmpty()
-        .withMessage("Please make sure all fields are filled"),
-    check("email")
-        .escape()
-        .isEmail()
-        .withMessage("Invalid email")], validationErrorMiddleware,
+    [
+        check("email", "password")
+            .notEmpty()
+            .withMessage("Please make sure all fields are filled"),
+        check("email")
+            .escape()
+            .isEmail()
+            .withMessage("Invalid email")
+    ],
+    validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { email, password } = req.body;
+        const { email } = matchedData(req);
+        const { password } = req.body;
 
         db.execute(`
-            SELECT
+            SELECT 
+                CONCAT(id_prefix, id) AS identity, 
                 id,
+                id_prefix,
                 name,
-                role,
                 email,
                 password,
-                created_by,
-                updated_by,
-                last_updated,
-                created,
-                access,
-                areasid
-            FROM
+                user_role_id,
+                phone,
+                access_id,
+                area_id
+            FROM 
                 users 
             WHERE 
-                email = ?;`
-            ,
-            [email], (err, dbResults) => {
+                email = ?;`,
+            [email],
+            expressAsyncHandler(async (err, dbResults) => {
+
                 if (err) {
-                    return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
+                    return res.status(500).json({
+                        message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 1
+                    })
                 }
 
-                if (!dbResults[0]) {
-                    return res.status(404).json({ message: "User not found.", data: { email } })
+                if (!dbResults) {
+                    return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
                 }
 
-                if (dbResults[0].access === "blocked") {
+
+                if (dbResults[0].access === 1_000_002) {
                     return res.status(401).json({ message: "User is disabled." })
                 }
 
-                if (dbResults[0].access === "deleted") {
+                if (dbResults[0].access === 1_000_003) {
                     return res.status(401).json({ message: "User not found." })
                 }
 
                 //Verify password from db with one from req
                 if (verifyPassword(password, dbResults[0].password)) {
                     //Create JWT Token
-                    const token = newToken(dbResults[0].id)
-
-                    //Remove password from the data
-                    dbResults[0].password = "";
+                    const token = newToken(dbResults[0].id);
 
                     //Add log to queue
-                    addLogToQueue(dbResults[0].id, "User", "User loggedin successfully");
+                    addLogToQueue(dbResults[0].id, dbResults[0].name, `User loggedin successfully ${dbResults[0].email}`);
 
-                    return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0] } })
+                    return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
                 }
+
                 res.status(401).json({ message: "Invalid email or password." })
             })
+        )
     })
 );
 
@@ -203,12 +226,11 @@ router.patch("/forgot-password/:email/:code",
         db.execute(`
                 UPDATE users SET
                     password = ?,
-                    updated_by = ?,
-                    last_updated = ?
+                    updated_by = ?
                 WHERE 
                     email = ?;`
             ,
-            [newPassword, "system", getTimestamp(), email], (err, dbResults) => {
+            [newPassword, "system", email], (err, dbResults) => {
                 if (err) {
                     return res.status(500).json({ message: "Can not perform that action right now", error: process.env.IS_DEV === "true" ? err : 2 })
                 }

@@ -2,6 +2,7 @@ const mysql = require("mysql2");
 const crypto = require("crypto");
 const { createClient } = require("redis");
 
+
 //Create database connection
 const db = mysql.createPool(process.env.DB_URL);
 
