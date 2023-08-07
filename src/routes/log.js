@@ -26,7 +26,7 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 ))
 
 router.get('/', expressAsyncHandler(async (_, res) => {
-    db.query(`SELECT * FROM logs ORDER BY timestamp DESC;`,
+    db.query(`SELECT * FROM logs ORDER BY created_at DESC;`,
         (err, result) => {
             if (err) {
                 res.status(500).send({ message: err.message })

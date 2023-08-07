@@ -2,9 +2,9 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
+const { db } = require('../utils/database');
 const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
-const { db, getNewID, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
@@ -27,13 +27,21 @@ router.get('/',
     expressAsyncHandler((_, res) => {
         const sqlQuery = `
         SELECT 
-            id
+            id,
+            id_prefix,
+            status,
+            device_id,
+            available,
+            updated_by,
+            updated_at,
+            created_by,
+            created_at
         FROM 
             sensors
         WHERE 
             available = 1 
         AND 
-            active = 1
+            status = 1
         ;`;
 
         db.execute(sqlQuery, [], (err, dbResults) => {
@@ -54,14 +62,15 @@ router.get('/all',
     expressAsyncHandler((_, res) => {
         const sqlQuery = `
         SELECT 
-            id,	
-            access_pointsid,	
-            active,	
-            modified_by,	
-            available,	
-            deviceId,	
-            created,	
-            last_updated
+            id,
+            id_prefix,
+            status,
+            device_id,
+            available,
+            updated_by,
+            updated_at,
+            created_by,
+            created_at
         FROM 
             sensors
         ;`;
@@ -80,42 +89,34 @@ router.get('/all',
 router.post('/create',
     [
         check('userId', 'UserId is required').escape().not().isEmpty(),
-        check('access_pointsid', 'Access Point required').escape().not().isEmpty(),
         check('deviceId', 'Can be null').escape(),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { access_pointsid, deviceId, userId } = req.body
+        const { deviceId, userId } = req.body
 
-        const timestamp = getTimestamp();
         const sqlQuery = `
-        INSERT INTO sensors(
-            id, 
-            available, 
-            created, 
-            last_updated,
-            modified_by, 
-            access_pointsid,
-            deviceid
-        ) 
-        VALUES(
-            ?, 
-            ?, 
-            ?, 
-            ?, 
-            ?, 
-            ?, 
-            ?
-        );`;
+            INSERT INTO
+                sensors (
+                    status,
+                    device_id,
+                    updated_by,
+                    created_by
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                );`
+            ;
 
         const sqlParams = [
-            getNewID(),
             deviceId ? 1 : 0,
-            timestamp,
-            timestamp,
-            userId,
-            access_pointsid,
             deviceId ? deviceId : null,
+            userId,
+            userId
         ];
 
         db.execute(sqlQuery, sqlParams, (err, dbResults) => {
@@ -127,7 +128,7 @@ router.post('/create',
                 return res.status(202).json({ message: "Sensor not created." });
             }
 
-            addLogToQueue(userId, "Sensor", `Sensor created successfully by ${userId} at ${timestamp} with id ${dbResults.insertId} and access_pointsid ${access_pointsid} and deviceid ${deviceId}`);
+            addLogToQueue(userId, "Sensor", `Sensor created successfully by ${userId} with id ${dbResults.insertId} and deviceid ${deviceId}`);
 
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
         })
@@ -148,17 +149,16 @@ router.put('/',
         const { id, available, active, deviceId, username } = matchedData(req);
 
         const sqlQuery = `
-        UPDATE sensors SET  
-            active = ?, 
-            modified_by = ?, 
+        UPDATE sensors SET 
+            status = ?, 
             available = ?, 
-            deviceId = ? ,
-            last_updated = ?
+            updated_by = ?, 
+            device_id = ?           
         WHERE
             id = ?;
         `;
 
-        db.execute(sqlQuery, [active, username, available, deviceId ? deviceId : null, getTimestamp(), id], (err, dbResults) => {
+        db.execute(sqlQuery, [active, available, username, deviceId ? deviceId : null, id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -167,7 +167,7 @@ router.put('/',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, "Sensor", `Sensor updated successfully by ${username} at ${getTimestamp()} available ${available} and active ${active}`);
+            addLogToQueue(id, "Sensor", `Sensor updated successfully by ${username} available ${available}, deviceId ${deviceId} and active ${active}`);
 
             res.status(200).json({ message: "Sensor updated successfully." })
         })
@@ -189,14 +189,15 @@ router.put('/unassign',
                 sensors
             SET
                 available = 0,
-                deviceId = null,
-                modified_by = ?,
-                last_updated = ?
+                status = 1, 
+                device_id = null, 
+                available = 1, 
+                updated_by = ?
             WHERE
                 id = ?;
         `;
 
-        db.execute(sqlQuery, [username, getTimestamp(), id], (err, dbResults) => {
+        db.execute(sqlQuery, [username, id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -205,7 +206,7 @@ router.put('/unassign',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, Sensor, `Sensor ${id} unassigned successfully by ${username} at ${getTimestamp()} with deviceid ${deviceId}`);
+            addLogToQueue(id, Sensor, `Sensor ${id} unassigned successfully by ${username} with deviceid ${deviceId}`);
 
             res.status(200).json({ message: "Sensor unassigned successfully." })
         })
@@ -225,14 +226,13 @@ router.put('/unassign/:id',
         UPDATE
             miners
         SET
-            sensorsid = null,
-            updated_by = ?,
-            last_updated = ?
+            sensor_id = null,
+            updated_by = ?
         WHERE
             sensorsid = ?;
         `;
 
-        db.execute(sqlQuery, [username, getTimestamp(), id], (err, dbResults) => {
+        db.execute(sqlQuery, [username, id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -240,7 +240,7 @@ router.put('/unassign/:id',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, "Sensor", `Sensor unassigned successfully by ${username} at ${getTimestamp()}`);
+            addLogToQueue(id, "Sensor", `Sensor unassigned successfully by ${username}`);
 
             res.status(200).json({ message: "Sensor unassigned successfully." })
         })
