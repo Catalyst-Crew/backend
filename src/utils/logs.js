@@ -1,4 +1,4 @@
-const { pDB } = require('./database');
+const { db } = require('./database');
 const { Worker, Queue } = require('bullmq');
 
 
@@ -12,13 +12,8 @@ const CONNECTION = {
 
 const worker = new Worker('logger',
     async job => {
-        await pDB.logs.create({
-            data: {
-                loger_id: job.data.generatee_id.toString(),
-                loger_name: job.data.generatee_name.toString(),
-                message: job.data.massage.toString(),
-            }
-        });
+        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
+            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
     }, {
     connection: CONNECTION
 });

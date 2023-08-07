@@ -33,12 +33,12 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 redisDb.connect(); 
 const isDev = process.env.IS_DEV === "true";
 
-// if (!isDev) {
-//     db.getConnection((err) => {
-//         if (err) throw err;
-//         console.log("Database Connected");
-//     })
-// }
+if (!isDev) {
+    db.getConnection((err) => {
+        if (err) throw err;
+        console.log("Database Connected");
+    })
+}
 
 //Routes here
 app.use("/sensors", sensors);
