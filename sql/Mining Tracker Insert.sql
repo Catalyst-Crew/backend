@@ -12,9 +12,13 @@ INSERT INTO access_points
   area_id, 
   name, 
   lat, 
-  longitude) 
+  longitude, 
+  status, 
+  device_id) 
 VALUES 
   (?, 
+  ?, 
+  ?, 
   ?, 
   ?, 
   ?, 

@@ -10,6 +10,8 @@ CREATE TABLE access_points (
   name      char(30) NOT NULL, 
   lat       decimal(9, 6) NOT NULL, 
   longitude decimal(9, 6) NOT NULL, 
+  status    tinyint(3) DEFAULT 1 NOT NULL, 
+  device_id char(50) UNIQUE, 
   PRIMARY KEY (id));
 CREATE TABLE announcements (
   id         int(11) NOT NULL AUTO_INCREMENT, 

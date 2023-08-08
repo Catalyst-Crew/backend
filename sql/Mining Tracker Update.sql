@@ -8,7 +8,9 @@ UPDATE access_points SET
   area_id = ?, 
   name = ?, 
   lat = ?, 
-  longitude = ? 
+  longitude = ?, 
+  status = ?, 
+  device_id = ? 
 WHERE
   id = ?;
 UPDATE announcements SET 
