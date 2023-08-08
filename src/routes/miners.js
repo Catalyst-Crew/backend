@@ -26,24 +26,26 @@ router.get('/',
     expressAsyncHandler((_, res) => {
         const sqlQuery = `
             SELECT
-                m.id,
-                m.id_prefix,
-                m.name,
-                m.email,
-                m.status,
-                m.created_at,
-                m.created_by,
-                m.updated_at,
-                m.updated_by,
-                m.user_id,
-                m.shift_id,
-                m.sensor_id
+                m.id AS id,
+                m.id_prefix AS id_prefix,
+                m.name AS user_name,
+                m.email AS email,
+                m.status AS status,
+                m.created_at AS created_at,
+                m.created_by AS created_by,
+                m.updated_at AS updated_at,
+                m.updated_by AS updated_by,
+                m.user_id AS supervisor_id,
+                m.shift_id AS shift_id,
+                m.sensor_id AS sensor_id,
+                u.name AS supervisor_name,
+                s.name AS shift_name
             FROM
-                miners as m
+                miners m
             INNER JOIN
-                users as u
-            ON
-                m.user_id = u.id
+                users u ON m.user_id = u.id
+            INNER JOIN
+                shifts s ON m.shift_id = s.id
             WHERE
                 m.status != 3;
         `;
@@ -69,28 +71,22 @@ router.post('/create',
     expressAsyncHandler((req, res) => {
         const { name, username, shift, userId, email } = matchedData(req);
 
-        const sqlQuery = `
-            INSERT INTO
-                miners (
-                    name,
-                    email,
-                    created_by,
-                    updated_by,
-                    user_id,
-                    shift_id
-                )
-            VALUES
-                (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                );
-        `;
-
-        db.execute(sqlQuery, [name, email, username, username, userId, shift], (err, dbResults) => {
+        db.execute(`
+        INSERT INTO miners(
+            name, 
+            email, 
+            created_by, 
+            user_id, 
+            shift_id
+            ) 
+        VALUES(
+            ?, 
+            ?, 
+            ?, 
+            ?, 
+            ?
+            );
+        `, [name, email, username, userId, shift], (err, dbResults) => {
             if (err, dbResults) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -120,25 +116,22 @@ router.put("/:id",
     expressAsyncHandler((req, res) => {
         let { id, shift, supervisor_id, sensorsid, updated_by } = matchedData(req);
 
-        const sqlQuery = `
-            UPDATE 
-                miners 
-            SET 
-                status = 1,
+        db.execute(`
+            UPDATE miners SET 
+                status = 1,  
                 updated_by = ?, 
                 user_id = ?, 
                 shift_id = ?, 
                 sensor_id = ? 
             WHERE
                 id = ?;
-        `
-        db.execute(sqlQuery, [updated_by, supervisor_id, shift, sensorsid, id], (err, dbResults) => {
+        `, [updated_by, supervisor_id, shift, sensorsid, id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
             if (sensorsid === null) {
-                addLogToQueue(updated_by, updated_by, `Updated the employee with the id ${id} with the sensor id ${sensorsid},  and shift ${shift}, and supervisor id ${supervisor_id}`)
+                addLogToQueue(id, updated_by, `Updated the employee with the id ${id} with shift ${shift}, and supervisor id ${supervisor_id}`)
                 res.status(200).json({ message: "Employee updated successfully.", data: {} })
             } else {
                 //set node to unavailable
@@ -148,7 +141,6 @@ router.put("/:id",
                     SET
                         available = 0
                     WHERE
-
                         id = ?;
                 `
                 db.execute(sqlQuery, [sensorsid], (err, dbResults) => {

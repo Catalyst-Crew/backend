@@ -25,24 +25,37 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 //get all sensors
 router.get('/',
     expressAsyncHandler((_, res) => {
-        const sqlQuery = `
-        SELECT 
-            id,
-            id_prefix,
-            status,
-            device_id,
-            available,
-            updated_by,
-            updated_at,
-            created_by,
-            created_at
-        FROM 
-            sensors
-        WHERE 
-            available = 1 
-        AND 
-            status = 1
-        ;`;
+        const sqlQuery = ENV ? `
+                SELECT 
+                    id,
+                    id_prefix,
+                    status,
+                    device_id,
+                    available,
+                    updated_by,
+                    updated_at,
+                    created_by,
+                    created_at
+                FROM 
+                    sensors
+                ;` : `
+                SELECT 
+                    id,
+                    id_prefix,
+                    status,
+                    device_id,
+                    available,
+                    updated_by,
+                    updated_at,
+                    created_by,
+                    created_at
+                FROM 
+                    sensors
+                WHERE 
+                    available = 1 
+                AND 
+                    status = 1
+                ;`;
 
         db.execute(sqlQuery, [], (err, dbResults) => {
             if (err) {
