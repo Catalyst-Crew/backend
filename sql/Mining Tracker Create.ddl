@@ -4,14 +4,15 @@ CREATE TABLE access (
   name      char(10) NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE access_points (
-  id        int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix char(5) DEFAULT 'acc-' NOT NULL, 
-  area_id   int(11) NOT NULL, 
-  name      char(30) NOT NULL, 
-  lat       decimal(9, 6) NOT NULL, 
-  longitude decimal(9, 6) NOT NULL, 
-  status    tinyint(3) DEFAULT 1 NOT NULL, 
-  device_id char(50) UNIQUE, 
+  id         int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix  char(5) DEFAULT 'acc-' NOT NULL, 
+  area_id    int(11) NOT NULL, 
+  name       char(30) NOT NULL, 
+  lat        decimal(9, 6) NOT NULL, 
+  longitude  decimal(9, 6) NOT NULL, 
+  status     tinyint(3) DEFAULT 1 NOT NULL, 
+  device_id  char(50) UNIQUE, 
+  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE announcements (
   id         int(11) NOT NULL AUTO_INCREMENT, 
@@ -22,11 +23,12 @@ CREATE TABLE announcements (
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE areas (
-  id        int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix char(5) DEFAULT 'are-' NOT NULL, 
-  name      char(30) NOT NULL, 
-  lat       decimal(9, 6) NOT NULL, 
-  longitude decimal(9, 6) NOT NULL, 
+  id         int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix  char(5) DEFAULT 'are-' NOT NULL, 
+  name       char(30) NOT NULL, 
+  lat        decimal(9, 6) NOT NULL, 
+  longitude  decimal(9, 6) NOT NULL, 
+  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE logs (
   id         int(11) NOT NULL AUTO_INCREMENT, 
@@ -55,7 +57,7 @@ CREATE TABLE miners (
   status     tinyint(1) DEFAULT 1 NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, 
   created_by char(20) DEFAULT 'System' NOT NULL, 
-  updated_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
   updated_by char(20) DEFAULT 'System' NOT NULL, 
   user_id    int(11) NOT NULL, 
   shift_id   int(11) NOT NULL, 
@@ -81,7 +83,7 @@ CREATE TABLE sensors (
   device_id  char(50) UNIQUE, 
   available  tinyint(1) DEFAULT 1 NOT NULL, 
   updated_by char(20) DEFAULT 'System' NOT NULL, 
-  updated_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
   created_by char(20) NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id), 
