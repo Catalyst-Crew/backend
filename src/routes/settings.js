@@ -31,9 +31,14 @@ router.get('/:user_id',
                 user_id, 
                 app_notifications, 
                 email_notifications, 
-                dark_mode 
+                dark_mode,
+                phone,
+                name,
+                email
             FROM 
                 settings
+            INNEr JOIN 
+                users ON settings.user_id=users.id
             WHERE
                 user_id=?
             LIMIT 1;
