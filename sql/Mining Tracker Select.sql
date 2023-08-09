@@ -1,10 +1,10 @@
 SELECT id, id_prefix, name 
   FROM access;
-SELECT id, id_prefix, area_id, name, lat, longitude, status, device_id 
+SELECT id, id_prefix, area_id, name, lat, longitude, status, device_id, created_at 
   FROM access_points;
 SELECT id, id_prefix, usersid, name, message, created_at 
   FROM announcements;
-SELECT id, id_prefix, name, lat, longitude 
+SELECT id, id_prefix, name, lat, longitude, created_at 
   FROM areas;
 SELECT id, id_prefix, loger_id, loger_name, created_at, message 
   FROM logs;

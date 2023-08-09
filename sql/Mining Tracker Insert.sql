@@ -14,9 +14,11 @@ INSERT INTO access_points
   lat, 
   longitude, 
   status, 
-  device_id) 
+  device_id, 
+  created_at) 
 VALUES 
   (?, 
+  ?, 
   ?, 
   ?, 
   ?, 
@@ -43,9 +45,11 @@ INSERT INTO areas
   id_prefix, 
   name, 
   lat, 
-  longitude) 
+  longitude, 
+  created_at) 
 VALUES 
   (?, 
+  ?, 
   ?, 
   ?, 
   ?, 
