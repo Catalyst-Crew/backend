@@ -153,25 +153,27 @@ router.put('/',
     [
         check('id', 'ID is required').escape().not().isEmpty(),
         check('available', 'Available is required').escape().not().isEmpty(),
-        check('active', 'Active is required').escape().not().isEmpty(),
-        check('deviceId', 'Can be null').escape(),
+        check('status', 'Status is required').escape().not().isEmpty(),
+        check('device_id', 'Can be null').escape(),
         check('username', 'Updated by is required').escape().not().isEmpty(),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { id, available, active, deviceId, username } = matchedData(req);
+        const { id, available, status, device_id, username } = matchedData(req);
 
         const sqlQuery = `
-        UPDATE sensors SET 
-            status = ?, 
-            available = ?, 
-            updated_by = ?, 
-            device_id = ?           
-        WHERE
-            id = ?;
+            UPDATE sensors SET 
+                status = ?, 
+                available = ?, 
+                updated_by = ?, 
+                device_id = ?           
+            WHERE
+                id = ?;
         `;
 
-        db.execute(sqlQuery, [active, available, username, deviceId ? deviceId : null, id], (err, dbResults) => {
+        const deviceId = device_id ? device_id : null;
+
+        db.execute(sqlQuery, [parseInt(status), parseInt(available), username, deviceId, parseInt(id)], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -180,7 +182,7 @@ router.put('/',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, "Sensor", `Sensor updated successfully by ${username} available ${available}, deviceId ${deviceId} and active ${active}`);
+            addLogToQueue(id, "Sensor", `Sensor updated successfully by ${username} available ${available}, deviceId ${device_id} and active ${status}`);
 
             res.status(200).json({ message: "Sensor updated successfully." })
         })
@@ -190,12 +192,12 @@ router.put('/',
 router.put('/unassign',
     [
         check('id', 'ID is required').escape().not().isEmpty(),
-        check('deviceId', 'DeviceId is required').escape().not().isEmpty(),
-        check('username', 'username is required').escape().not().isEmpty()
+        check('device_id', 'DeviceId is required').escape().not().isEmpty(),
+        check('username', 'Username is required').escape().not().isEmpty()
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { id, deviceId, username } = matchedData(req);
+        const { id, device_id, username } = matchedData(req);
 
         const sqlQuery = `
             UPDATE
@@ -210,7 +212,7 @@ router.put('/unassign',
                 id = ?;
         `;
 
-        db.execute(sqlQuery, [username, id], (err, dbResults) => {
+        db.execute(sqlQuery, [username, parseInt(id)], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -219,7 +221,7 @@ router.put('/unassign',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, Sensor, `Sensor ${id} unassigned successfully by ${username} with deviceid ${deviceId}`);
+            addLogToQueue(id, Sensor, `Sensor ${id} unassigned successfully by ${username} with deviceid ${device_id}`);
 
             res.status(200).json({ message: "Sensor unassigned successfully." })
         })
@@ -236,16 +238,16 @@ router.put('/unassign/:id',
         const { id, username } = matchedData(req);
 
         const sqlQuery = `
-        UPDATE
-            miners
-        SET
-            sensor_id = null,
-            updated_by = ?
-        WHERE
-            sensorsid = ?;
+            UPDATE
+                miners
+            SET
+                sensor_id = null,
+                updated_by = ?
+            WHERE
+                sensorsid = ?;
         `;
 
-        db.execute(sqlQuery, [username, id], (err, dbResults) => {
+        db.execute(sqlQuery, [username, parseInt(id)], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -253,7 +255,7 @@ router.put('/unassign/:id',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, "Sensor", `Sensor unassigned successfully by ${username}`);
+            addLogToQueue(username, "Sensor", `Sensor unassigned successfully by ${username}`);
 
             res.status(200).json({ message: "Sensor unassigned successfully." })
         })
