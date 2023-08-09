@@ -9,7 +9,6 @@ const ENV = process.env.IS_DEV === "true";
 
 const router = Router();
 
-
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
         verifyToken(req, res, next); //uncomment in production
@@ -106,5 +105,5 @@ router.get('/',
     )
 );
 
-
 module.exports = router;
+

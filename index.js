@@ -2,6 +2,9 @@ require("dotenv").config();
 const cors = require("cors");
 const logger = require('morgan')
 const express = require("express");
+const http = require('http');
+const { Server } = require("socket.io");
+
 
 const { db, redisDb } = require("./src/utils/database");
 
@@ -19,8 +22,9 @@ const accessPoints = require("./src/routes/accessPoints");
 const { worker } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
-
 //Apply Midllewares
 app.enable("trust proxy");
 app.use([
@@ -62,6 +66,14 @@ app.use((err, req, res, next) => {
 });
 
 //Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server listening on port: ${PORT}`);
+});
+
+io.on('connection', (socket) => {
+    socket.broadcast.emit('miner_update', 'miner update');
+    socket.broadcast.emit('sensor_update', 'sensor update');
+    socket.broadcast.emit('area_update', 'area update');
+    socket.broadcast.emit('access_point_update', 'access point update');
+    socket.broadcast.emit('new_message', 'new_message');
 });
