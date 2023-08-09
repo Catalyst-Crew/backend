@@ -1,10 +1,9 @@
 require("dotenv").config();
 const cors = require("cors");
+const http = require('http');
 const logger = require('morgan')
 const express = require("express");
-const http = require('http');
 const { Server } = require("socket.io");
-
 
 const { db, redisDb } = require("./src/utils/database");
 
@@ -62,7 +61,10 @@ app.all("/", (_, res) => {
 //Error handler
 app.use((err, req, res, next) => {
     res.status(500).send({ massage: "Something went wrong" });
-    console.log(err);
+    if (isDev) {
+        console.log(err);
+    }
+    return;
 });
 
 //Start the server
