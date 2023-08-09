@@ -9,6 +9,7 @@ const { db, redisDb } = require("./src/utils/database");
 const logs = require("./src/routes/log");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
+const areas = require("./src/routes/areas");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const settings = require("./src/routes/settings");
@@ -30,7 +31,7 @@ app.use([
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
 // //Connect to Db
-redisDb.connect(); 
+redisDb.connect();
 const isDev = process.env.IS_DEV === "true";
 
 if (!isDev) {
@@ -46,6 +47,7 @@ app.use("/miners", miners);
 app.use("/users", users);
 app.use("/logs", logs);
 app.use("/auth", auth);
+app.use("/areas", areas);
 app.use("/settings", settings);
 app.use("/access-points", accessPoints);
 app.use("/dashboard", dasboard);
