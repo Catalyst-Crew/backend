@@ -5,6 +5,7 @@ const { check, validationResult, matchedData } = require("express-validator");
 
 const { db } = require('../utils/database');
 const { addLogToQueue } = require('../utils/logs');
+const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const route = Router();
 
@@ -119,6 +120,36 @@ route.get('/supervisors',
 
             res.status(202).json({ message: "No supervisors found" });
         }
+        )
+    })
+)
+
+route.put('/update/:id',
+    check(["id", "name", "phone"]).escape().notEmpty().withMessage("Please make sure all fields are present"),
+    validationErrorMiddleware,
+    expressAsyncHandler(async (req, res) => {
+        const { id, name, phone } = matchedData(req);
+
+        db.execute(
+            `UPDATE
+                users
+            SET
+                name = ?,
+                phone = ?
+            WHERE
+                id = ?;`,
+            [name, phone, parseInt(id)],
+            (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
+                }
+
+                if (dbResults.affectedRows) {
+                    addLogToQueue(id, "User", `User updated successfully by ${name} with id ${id} and phone ${phone}`);
+                }
+
+                return res.status(200).json({ message: "User updated successfully" });
+            }
         )
     })
 )
