@@ -7,6 +7,7 @@ const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
 
+
 const router = Router();
 
 router.use(expressAsyncHandler(async (req, res, next) => {
@@ -22,87 +23,138 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 router.get('/',
     validationErrorMiddleware,
     expressAsyncHandler((_, res) => {
-        const sqlQuery = `
-        WITH SensorDetails AS (
+        const query =
+            `
             SELECT
-                s.id AS sensor_id,
-                s.id_prefix AS sensor_id_prefix,
-                s.status AS sensor_status,
-                s.device_id AS sensor_device_id,
-                s.available AS sensor_available,
-                s.updated_by AS sensor_updated_by,
-                s.updated_at AS sensor_updated_at,
-                s.created_by AS sensor_created_by,
-                s.created_at AS sensor_created_at,
-                (SELECT JSON_OBJECT(
-                    'miner_id', mn.id,
-                    'miner_id_prefix', mn.id_prefix,
-                    'miner_name', mn.name,
-                    'miner_email', mn.email,
-                    'miner_status', mn.status,
-                    'miner_created_at', mn.created_at,
-                    'miner_created_by', mn.created_by,
-                    'miner_updated_at', mn.updated_at,
-                    'miner_updated_by', mn.updated_by,
-                    'miner_user_id', mn.user_id,
-                    'miner_shift_id', mn.shift_id
-                ) FROM miners mn WHERE mn.sensor_id = s.id) AS miner_info,
-                (SELECT JSON_OBJECT(
-                    'area_id', ar.id,
-                    'area_id_prefix', ar.id_prefix,
-                    'area_name', ar.name,
-                    'area_lat', ar.lat,
-                    'area_longitude', ar.longitude,
-                    'area_created_at', ar.created_at
-                ) FROM areas ar JOIN access_points ap ON ap.area_id = ar.id WHERE ap.id = m.access_point_id) AS area_info,
-                (SELECT JSON_OBJECT(
-                    'access_point_id', ap.id,
-                    'access_point_id_prefix', ap.id_prefix,
-                    'access_point_name', ap.name,
-                    'access_point_lat', ap.lat,
-                    'access_point_longitude', ap.longitude,
-                    'access_point_status', ap.status,
-                    'access_point_device_id', ap.device_id,
-                    'access_point_created_at', ap.created_at
-                ) FROM access_points ap WHERE ap.id = m.access_point_id) AS access_point_info,
-                (SELECT JSON_ARRAYAGG(
+                JSON_ARRAYAGG(
                     JSON_OBJECT(
-                        'measurement_id', mx.id,
-                        'measurement_id_prefix', mx.id_prefix,
-                        'measurement_created_at', mx.created_at,
-                        'measurement_location', mx.location,
-                        'measurement_other_data', mx.other_data
+                        'area_id', ar.id,
+                        'area_name', ar.name,
+                        'area_latitude', ar.lat,
+                        'area_longitude', ar.longitude,
+                        'id_prefix_area', ar.id_prefix,
+                        'area_created_at', ar.created_at,
+                        'access_points', ap_json.access_points,
+                        'supervisor', us.name
                     )
-                ) FROM measurements mx WHERE mx.sensor_id = s.id) AS measurements
-            FROM sensors s
-            LEFT JOIN measurements m ON s.id = m.sensor_id
-            WHERE s.available = 0
-        )
-        SELECT
-            sensor_id,
-            sensor_id_prefix,
-            sensor_status,
-            sensor_device_id,
-            sensor_available,
-            sensor_updated_by,
-            sensor_updated_at,
-            sensor_created_by,
-            sensor_created_at,
-            miner_info,
-            area_info,
-            access_point_info,
-            measurements
-        FROM SensorDetails;
-    `;
+                ) AS areas
+            FROM
+                areas ar
+            LEFT JOIN (
+                SELECT DISTINCT
+                   name,
+                   area_id
+                FROM
+                    users
+            ) us ON ar.id = us.area_id
 
-        db.execute(sqlQuery, [], (err, dbResults) => {
+            INNER JOIN (
+                SELECT
+                    area_id,
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'area_id', ap.area_id,
+                            'area_name', ar.name,
+                            'access_point_id', ap.id,
+                            'device_id', ap.device_id,
+                            'access_point_name', ap.name,
+                            'access_point_latitude', ap.lat,
+                            'access_point_status', ap.status,
+                            'measurements', mea_json.measurements,
+                            'id_prefix_access_point', ap.id_prefix,
+                            'access_point_longitude', ap.longitude,
+                            'access_point_created_at', ap.created_at
+                        )
+                    ) AS access_points
+                FROM
+                    access_points ap
+                    INNER JOIN areas ar ON ap.area_id = ar.id
+                LEFT JOIN (
+                    SELECT
+                        access_point_id,
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', mea.id,
+                                'miner_id', min.id,
+                                'miner_name', min.name,
+                                'location', mea.location,
+                                'sensor_id', mea.sensor_id,
+                                'miner_shift', min.shift_id,
+                                'other_data', mea.other_data,
+                                'created_at', mea.created_at,
+                                'miner_supervisor', min.user_id,
+                                'access_point_id', mea.access_point_id,
+                                'measurement_id_prefix', mea.id_prefix,
+                                'sensor_id_prefix', sen_json.id_prefix,
+                                'sensor_device_id', sen_json.device_id,
+                                'shift_name', shi.name
+                            )
+                        ) AS measurements
+                    FROM (
+                        SELECT
+                            m1.*
+                        FROM
+                            measurements m1
+                        INNER JOIN (
+                            SELECT
+                                sensor_id,
+                                MAX(created_at) AS latest_created_at
+                            FROM
+                                measurements
+                            GROUP BY
+                                sensor_id
+                        ) m2 ON m1.sensor_id = m2.sensor_id AND m1.created_at = m2.latest_created_at
+                    ) mea
+                    INNER JOIN sensors sen_json ON mea.sensor_id = sen_json.id
+                    INNER JOIN miners min ON sen_json.id = min.sensor_id
+                    INNER JOIN shifts shi ON min.shift_id = shi.id
+                    GROUP BY
+                        access_point_id
+                ) mea_json ON ap.id = mea_json.access_point_id
+                GROUP BY
+                    area_id
+            ) ap_json ON ar.id = ap_json.area_id;
+        `;
+
+        db.execute(query, [], expressAsyncHandler((err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
-            res.status(200).json(dbResults)
-        })
-    }
-    )
+
+
+            const areas = dbResults[0].areas.map(area => {
+                return {
+                    area_id: area.area_id,
+                    area_name: area.area_name,
+                    area_latitude: area.area_latitude,
+                    area_longitude: area.area_longitude,
+                    id_prefix_area: area.id_prefix_area,
+                    area_created_at: area.area_created_at,
+                    supervisor: area.supervisor
+                }
+            });
+
+            const access_points = dbResults[0].areas.map(area => {
+                return area.access_points.map(access_point => {
+                    return {
+                        area_id: access_point.area_id,
+                        area_name: access_point.area_name,
+                        device_id: access_point.device_id,
+                        access_point_id: access_point.access_point_id,
+                        access_point_name: access_point.access_point_name,
+                        access_point_status: access_point.access_point_status,
+                        access_point_latitude: access_point.access_point_latitude,
+                        id_prefix_access_point: access_point.id_prefix_access_point,
+                        access_point_longitude: access_point.access_point_longitude,
+                        access_point_created_at: access_point.access_point_created_at,
+                        measurements: access_point.measurements
+                    }
+                })
+            }).flat();
+
+            res.status(200).json({ areas, access_points })
+        }))
+    })
 );
 
 module.exports = router;
