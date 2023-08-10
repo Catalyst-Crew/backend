@@ -34,17 +34,27 @@ router.get('/',
                         'area_longitude', ar.longitude,
                         'id_prefix_area', ar.id_prefix,
                         'area_created_at', ar.created_at,
-                        'access_points', ap_json.access_points
+                        'access_points', ap_json.access_points,
+                        'supervisor', us.name
                     )
                 ) AS areas
             FROM
                 areas ar
+            LEFT JOIN (
+                SELECT DISTINCT
+                   name,
+                   area_id
+                FROM
+                    users
+            ) us ON ar.id = us.area_id
+
             INNER JOIN (
                 SELECT
                     area_id,
                     JSON_ARRAYAGG(
                         JSON_OBJECT(
                             'area_id', ap.area_id,
+                            'area_name', ar.name,
                             'access_point_id', ap.id,
                             'device_id', ap.device_id,
                             'access_point_name', ap.name,
@@ -58,6 +68,7 @@ router.get('/',
                     ) AS access_points
                 FROM
                     access_points ap
+                    INNER JOIN areas ar ON ap.area_id = ar.id
                 LEFT JOIN (
                     SELECT
                         access_point_id,
@@ -75,7 +86,8 @@ router.get('/',
                                 'access_point_id', mea.access_point_id,
                                 'measurement_id_prefix', mea.id_prefix,
                                 'sensor_id_prefix', sen_json.id_prefix,
-                                'sensor_device_id', sen_json.device_id
+                                'sensor_device_id', sen_json.device_id,
+                                'shift_name', shi.name
                             )
                         ) AS measurements
                     FROM (
@@ -95,6 +107,7 @@ router.get('/',
                     ) mea
                     INNER JOIN sensors sen_json ON mea.sensor_id = sen_json.id
                     INNER JOIN miners min ON sen_json.id = min.sensor_id
+                    INNER JOIN shifts shi ON min.shift_id = shi.id
                     GROUP BY
                         access_point_id
                 ) mea_json ON ap.id = mea_json.access_point_id
@@ -117,6 +130,7 @@ router.get('/',
                     area_longitude: area.area_longitude,
                     id_prefix_area: area.id_prefix_area,
                     area_created_at: area.area_created_at,
+                    supervisor: area.supervisor
                 }
             });
 
@@ -124,11 +138,15 @@ router.get('/',
                 return area.access_points.map(access_point => {
                     return {
                         area_id: access_point.area_id,
-                        access_point_id: access_point.access_point_id,
+                        area_name: access_point.area_name,
                         device_id: access_point.device_id,
+                        access_point_id: access_point.access_point_id,
                         access_point_name: access_point.access_point_name,
-                        access_point_latitude: access_point.access_point_latitude,
                         access_point_status: access_point.access_point_status,
+                        access_point_latitude: access_point.access_point_latitude,
+                        id_prefix_access_point: access_point.id_prefix_access_point,
+                        access_point_longitude: access_point.access_point_longitude,
+                        access_point_created_at: access_point.access_point_created_at,
                         measurements: access_point.measurements
                     }
                 })
