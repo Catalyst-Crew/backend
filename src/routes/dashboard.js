@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { Router } = require('express');
 const expressAsyncHandler = require('express-async-handler');
 
@@ -6,6 +8,18 @@ const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
+const sqlPath = path.join(__dirname, '../../sql/dashboard.sql');
+
+const getSQL = () => {
+    fs.readFile(sqlPath, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+        }
+        return data;
+    })
+}
+
+const SQL = getSQL();
 
 const router = Router();
 
@@ -22,7 +36,9 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 router.get('/',
     validationErrorMiddleware,
     expressAsyncHandler((_, res) => {
-        const sqlQuery = `
+        let data = null;
+        
+        data = SQL ? SQL : `
         SELECT
             JSON_ARRAYAGG(
                 JSON_OBJECT(
@@ -65,8 +81,8 @@ router.get('/',
                             'miner_id', min.id,
                             'miner_name', min.name,
                             'location', mea.location,
-                            'miner_shift', min.shift,
                             'sensor_id', mea.sensor_id,
+                            'miner_shift', min.shift_id,
                             'other_data', mea.other_data,
                             'created_at', mea.created_at,
                             'miner_supervisor', min.user_id,
@@ -101,11 +117,11 @@ router.get('/',
         ) ap_json ON ar.id = ap_json.area_id;
         `;
 
-        db.execute(sqlQuery, [], (err, dbResults) => {
+        db.execute(data, [], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
-            res.status(200).json(dbResults)
+            res.status(200).json(dbResults[0].areas)
         })
     })
 );
