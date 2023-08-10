@@ -25,11 +25,13 @@ const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 //Apply Midllewares
-app.enable("trust proxy");
+//app.enable("trust proxy");
 app.use([
     express.json(),
-    cors(),
-    //express.urlencoded({ extended: true })
+    cors({
+        origin: '*',
+        methods: ["GET", "POST", "PUT", "DELETE"],
+    })
 ]);
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
@@ -77,5 +79,19 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('sensor_update', 'sensor update');
     socket.broadcast.emit('area_update', 'area update');
     socket.broadcast.emit('access_point_update', 'access point update');
-    socket.broadcast.emit('new_message', 'new_message');
+    console.log('a user connected');
+    socket.broadcast.emit('message', 'new_message');
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+    });
+
+    socket.on('message', (msg) => {
+        console.log('message: ' + msg);
+
+        socket.broadcast.emit('message', msg);
+
+    });
+
+
 });
