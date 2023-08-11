@@ -28,10 +28,11 @@ router.get('/',
         const sqlQuery = `
             SELECT
                 id,
+                id_prefix,
+                sensor_id,
                 name,
-                sensorsid,
-                active,
-                timestamp
+                status,
+                create_id
             FROM
                 alerts
         `;
@@ -59,10 +60,11 @@ router.put('/:id',
             settings
         SET
             id=?,
+            id_prefix=?,
+            sensor_id=?,
             name=?,
-            sensorsid=?,
-            active=?,
-            timestamp=?
+            status=?,
+            create_id=?
         WHERE
            id=?         
         `;
@@ -87,10 +89,11 @@ router.post('/',
     const sqlQuery = `
             SELECT
                 id,
+                id_prefix,
+                sensor_id,
                 name,
-                sensorsid,
-                active,
-                timestamp
+                status,
+                create_id
             FROM
                 alerts
         `;

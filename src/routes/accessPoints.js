@@ -28,9 +28,11 @@ router.get('/',
         const sqlQuery = `
             SELECT
                 id,
-                areasid,
-                active,
-                created
+                id_prefix,
+                areas_id,
+                name,
+                lat,
+                long
             FROM
                 access_points;
         `;
@@ -117,7 +119,11 @@ router.post('/',
         const sqlQuery = `
             SELECT
                 id,
-                areasid
+                id_prefix,
+                areas_id,
+                name,
+                lat,
+                lot
             FROM
                 accessPoints
        //     WHERE
