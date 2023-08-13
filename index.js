@@ -25,7 +25,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 //Apply Midllewares
-//app.enable("trust proxy");
+app.enable("trust proxy");
 app.use([
     express.json(),
     cors({
@@ -38,13 +38,14 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 // //Connect to Db
 redisDb.connect();
 const isDev = process.env.IS_DEV === "true";
-
-if (!isDev) {
-    db.getConnection((err) => {
+db.getConnection((err) => {
+    if (err) throw err;
+    db.query("SET time_zone = '+02:00';", (err) => {
         if (err) throw err;
-        console.log("Database Connected");
-    })
-}
+    });
+    console.log("Database Connected");
+})
+
 
 //Routes here
 app.use("/sensors", sensors);
