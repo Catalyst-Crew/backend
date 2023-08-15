@@ -104,7 +104,7 @@ router.post('/create',
     })
 )
 
-// update employee
+// update employee and add node
 router.put("/:id",
     [
         check('id', 'Miner is required').escape().notEmpty().toInt(),
@@ -178,30 +178,73 @@ router.delete("/deactivate/:id/:userId",
     expressAsyncHandler((req, res) => {
         const { id, userId } = matchedData(req);
 
+        //get the sensor id
         db.execute(`
-            UPDATE miners SET
-                sensor_id = null, 
-                shift = 1000003,
-                updated_by = ?, 
-                status = 2 
+            SELECT
+                sensor_id
+            FROM
+                miners
             WHERE
                 id = ?;
             `,
-            [userId, id], (err, dbResults) => {
+            [id], (err, dbResults) => {
                 if (err) {
-                    return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
+                    return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
-                if (dbResults.affectedRows === 0) {
-                    return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
-                }
+                if (dbResults.length !== 0) {
+                    db.execute(`
+                        UPDATE miners SET
+                            sensor_id = null, 
+                            shift = 1000003,
+                            updated_by = ?, 
+                            status = 2 
+                        WHERE
+                            id = ?;
+                        `,
+                        [userId, id], (err, dbResults) => {
+                            if (err) {
+                                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
+                            }
 
+                            if (dbResults.affectedRows === 0) {
+                                return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
+                            }
+
+                            //set node to available
+                            db.execute(`
+                                UPDATE
+                                    sensors
+                                SET
+                                    available = 1
+                                WHERE
+                                    id = ?;
+                                `,
+                                [sensorsid], (err, dbResults) => {
+                                    if (err) {
+                                        return res.status(500).json({ error: ENV ? err : 1 });
+                                    }
+
+                                    if (dbResults.affectedRows === 0) {
+                                        return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
+                                    }
+
+                                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
+
+                                    return res.status(200).json({ message: "Employee updated successfully.", data: {} })
+                                }
+                            )
+                        }
+                    )
+                    return;
+                }
                 addLogToQueue(id, userId, `Employee deactivated successfully by ${userId} with id ${id}`);
-                res.status(200).json({ message: "User deactivate successfully.", data: {} })
+                return res.status(200).json({ message: "User deactivate successfully.", data: {} })
             }
         )
     })
 )
+
 //delete employee
 router.delete("/delete/:id/:userId",
     [
@@ -212,26 +255,68 @@ router.delete("/delete/:id/:userId",
     expressAsyncHandler((req, res) => {
         const { id, userId } = matchedData(req);
 
+        //get the sensor id
         db.execute(`
-            UPDATE miners SET
-                sensor_id = null, 
-                shift = 1000003,
-                updated_by = ?, 
-                status = 3 
+            SELECT
+                sensor_id
+            FROM
+                miners
             WHERE
-                id = ?;`,
-            [userId, id], (err, dbResults) => {
+                id = ?;
+            `,
+            [id], (err, dbResults) => {
                 if (err) {
-                    return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
+                    return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
-                if (dbResults.affectedRows === 0) {
-                    return res.status(500).json({ message: "Failed deleting employee, please try again.", error: ENV ? err : 1 });
+                if (dbResults.length !== 0) {
+                    db.execute(`
+                        UPDATE miners SET
+                            sensor_id = null, 
+                            shift = 1000003,
+                            updated_by = ?, 
+                            status = 3 
+                        WHERE
+                            id = ?;
+                        `,
+                        [userId, id], (err, dbResults) => {
+                            if (err) {
+                                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
+                            }
+
+                            if (dbResults.affectedRows === 0) {
+                                return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
+                            }
+
+                            //set node to available
+                            db.execute(`
+                                UPDATE
+                                    sensors
+                                SET
+                                    available = 1
+                                WHERE
+                                    id = ?;
+                                `,
+                                [sensorsid], (err, dbResults) => {
+                                    if (err) {
+                                        return res.status(500).json({ error: ENV ? err : 1 });
+                                    }
+
+                                    if (dbResults.affectedRows === 0) {
+                                        return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
+                                    }
+
+                                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
+
+                                    return res.status(200).json({ message: "Employee updated successfully.", data: {} })
+                                }
+                            )
+                        }
+                    )
+                    return;
                 }
-
-                addLogToQueue(id, userId, `Employee deleted successfully by ${userId} with id ${id}`);
-
-                res.status(200).json({ message: "User deleted successfully.", data: {} })
+                addLogToQueue(id, userId, `Employee deactivated successfully by ${userId} with id ${id}`);
+                return res.status(200).json({ message: "User deactivate successfully.", data: {} })
             }
         )
     })
