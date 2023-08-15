@@ -5,6 +5,7 @@ const logger = require('morgan')
 const express = require("express");
 const trycatch = require("trycatch");
 const { Server } = require("socket.io");
+const { fork } = require('child_process');
 
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
@@ -107,3 +108,6 @@ io.on('connection', (socket) => {
 
     });
 });
+
+// create a child process to run cron jobs
+fork('./src/utils/cron-child.js');
