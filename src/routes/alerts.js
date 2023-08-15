@@ -5,21 +5,24 @@ const expressAsyncHandler = require('express-async-handler');
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
+const centralEmitter = require('../utils/events');
 
 const ENV = process.env.IS_DEV === "true";
 
 const router = Router();
 
 
-router.use(expressAsyncHandler(async (req, res, next) => {
-    if (!ENV) {
-        verifyToken(req, res, next); //uncomment in production
-    }
+router.use(
+    expressAsyncHandler(async (req, res, next) => {
+        if (!ENV) {
+            verifyToken(req, res, next); //uncomment in production
+        }
 
-    if (ENV) {
-        next() //Remove this on production
-    }
-}));
+        if (ENV) {
+            next() //Remove this on production
+        }
+    })
+);
 
 router.get('/',
     validationErrorMiddleware,
@@ -75,10 +78,7 @@ router.put('/:id',
     })
 );
 
-
 router.post('/',
-
-
     [
         check("sensor", "sensor is required").escape().notEmpty(),
         check("name", "name is required").escape().notEmpty()
@@ -87,24 +87,34 @@ router.post('/',
     expressAsyncHandler((req, res) => {
         const { sensor, name } = matchedData(req);
 
-        const sqlQuery = `
+
+        db.execute(`
             INSERT INTO
-                sensor_alerts (
+                sensor_alerts 
+                (
                 sensor_id,
                 name,
                 status
                 )
             VALUES
                 (?, ?, ?);
-        `;
+            `,
+            [sensor, name, 1], (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ error: ENV ? err : 1 });
+                }
 
-        db.execute(sqlQuery, [sensor, name, 1], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 1 });
+                res.status(200).json(dbResults)
+
+                db.execute(`SELECT * FROM sensor_alerts WHERE id = ?`, [dbResults.insertId], (err, dbResults) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    centralEmitter.emit("new_alert", dbResults[0])
+                })
             }
-
-            res.status(200).json(dbResults)
-        })
+        )
     })
 );
 

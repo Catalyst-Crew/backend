@@ -7,9 +7,9 @@ const trycatch = require("trycatch");
 const { Server } = require("socket.io");
 const { fork } = require('child_process');
 
+const { addLogToQueue } = require("./src/utils/logs");
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
-const { addLogToQueue } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
 //Routes
 const logs = require("./src/routes/log");
@@ -21,6 +21,7 @@ const sensors = require("./src/routes/sensors");
 const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
 const accessPoints = require("./src/routes/accessPoints");
+const centralEmitter = require("./src/utils/events");
 
 
 const app = express();
@@ -90,7 +91,16 @@ trycatch(() => (server.listen(PORT, () => {
 });
 
 io.on('connection', (socket) => {
-    socket.broadcast.emit('miner_update', 'miner update');
+
+    centralEmitter.on('miner_update', () => {
+        socket.broadcast.emit('miner_update', 'miner update');
+    });
+
+    centralEmitter.on('new_alert', (data) => {
+        socket.broadcast.emit('new_alert', data);
+    });
+
+
     socket.broadcast.emit('sensor_update', 'sensor update');
     socket.broadcast.emit('area_update', 'area update');
     socket.broadcast.emit('access_point_update', 'access point update');
