@@ -144,4 +144,36 @@ router.put('/:id',
     })
 );
 
+router.delete('/:id',
+    [
+        check('id').toInt().isInt().withMessage("Invalid area id"),
+        check("username").isLength({ min: 5 }).withMessage("Invalid username")
+    ],
+    validationErrorMiddleware,
+    expressAsyncHandler((req, res) => {
+        const { id, username } = matchedData(req);
+
+        db.execute(`
+            DELETE FROM
+                areas
+            WHERE
+                id = ?;
+            `,
+            [id], (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ error: ENV ? err : 1, message: "Can not perform that action right now #6" });
+                }
+
+                if (dbResults.affectedRows === 0) {
+                    return res.status(203).json({ error: ENV ? err : 1, message: "No area deleted #7" });
+                }
+
+                addLogToQueue(username, "Areas", "Delete", `Deleted area with id ${id}`);
+
+                return res.status(200).json({ message: "Area deleted successfully" })
+            }
+        )
+    })
+);
+
 module.exports = router;
