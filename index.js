@@ -8,7 +8,7 @@ const { Server } = require("socket.io");
 
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
-const { worker, addLogToQueue } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
+const { addLogToQueue } = require("./src/utils/logs"); //do not remove this line it does something I don't know how
 
 //Routes
 const logs = require("./src/routes/log");
