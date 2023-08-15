@@ -74,9 +74,10 @@ route.get('/',
             INNER JOIN 
                 access a ON u.access_id = a.id
             INNER JOIN
-                areas ar ON u.area_id = ar.id     
-                ;
-            `,
+                areas ar ON u.area_id = ar.id 
+            WHERE
+                u.access_id != 1000002   
+            ;`,
             (err, dbResults) => {
                 if (err) {
                     return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
