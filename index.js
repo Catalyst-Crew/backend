@@ -20,6 +20,7 @@ const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
+const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
 const centralEmitter = require("./src/utils/events");
 
@@ -61,6 +62,7 @@ app.use("/sensors", sensors);
 app.use("/settings", settings);
 app.use("/dashboard", dasboard);
 app.use("/access-points", accessPoints);
+app.use("/measurements", measurements);
 app.all("/", (_, res) => {
     res.send("OK");
 });
