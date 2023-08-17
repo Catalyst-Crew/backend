@@ -76,7 +76,7 @@ route.get('/',
             INNER JOIN
                 areas ar ON u.area_id = ar.id 
             WHERE
-                u.access_id != 1000002   
+                u.access_id != 1000003 
             ;`,
             (err, dbResults) => {
                 if (err) {
