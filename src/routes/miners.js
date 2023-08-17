@@ -47,7 +47,10 @@ router.get('/',
             INNER JOIN
                 shifts s ON m.shift_id = s.id
             WHERE
-                m.status != 3;
+                m.status != 3
+            ORDER BY
+                m.updated_at
+            DESC;
         `;
         db.execute(sqlQuery, [], (err, dbResults) => {
             if (err) {
@@ -117,6 +120,10 @@ router.put("/:id",
     expressAsyncHandler((req, res) => {
         let { id, shift, supervisor_id, sensorsid, updated_by } = matchedData(req);
 
+        const sensor_id = sensorsid ? sensorsid : null;
+
+        console.log("sensor_id: ", sensor_id);
+
         db.execute(`
             UPDATE miners SET 
                 status = 1,  
@@ -126,12 +133,12 @@ router.put("/:id",
                 sensor_id = ? 
             WHERE
                 id = ?;
-        `, [updated_by, supervisor_id, shift, sensorsid, id], (err, dbResults) => {
+        `, [updated_by, supervisor_id, shift, sensor_id, id], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
 
-            if (sensorsid === null) {
+            if (sensorsid === NaN || sensorsid === null || sensorsid === undefined || sensorsid === 0 || !sensorsid) {
                 if (dbResults.affectedRows === 0) {
                     return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
                 }
