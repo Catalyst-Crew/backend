@@ -20,14 +20,15 @@ router.post("/register",
     [
         check("name").escape().notEmpty().withMessage("Invalid name"),
         check("email").escape().isEmail().withMessage("Invalid email"),
-        check("role").isNumeric().notEmpty().withMessage("Invalid role"),
-        check("access").isNumeric().notEmpty().withMessage("Invalid access"),
-        check("areaId").isNumeric().notEmpty().withMessage("Invalid areaId"),
         check("user").escape().notEmpty().withMessage("Invalid user"),
+        check("role").isNumeric().notEmpty().withMessage("Invalid role").toInt(),
+        check("userId").escape().notEmpty().withMessage("Invalid userId").toInt(),
+        check("access").isNumeric().notEmpty().withMessage("Invalid access").toInt(),
+        check("areaId").isNumeric().notEmpty().withMessage("Invalid areaId").toInt(),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { name, email, role, user, access, areaId } = matchedData(req);
+        const { name, email, role, user, access, areaId, userId } = matchedData(req);
 
         db.execute(`SELECT email FROM users WHERE email = ?;`, [email], async (err, dbResults) => {
 
@@ -44,31 +45,11 @@ router.post("/register",
             const pass = getNewPassword();
 
             db.execute(`
-                INSERT INTO
-                    users (
-                        name,
-                        email,
-                        password,
-                        user_role_id,
-                        created_by,
-                        updated_by,
-                        access_id,
-                        area_id,
-                        phone
-                    )
-                    VALUES
-                    (
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ""
-                );`,
-                [name, email, hashPassword(pass), role, user, user, access, areaId],
+                    INSERT INTO users 
+                    (name, email, password, user_role_id, created_by, updated_by, access_id, area_id)
+                    VALUES(?,?,?,?,?,?,?,?);
+                `,
+                [name, email, hashPassword(pass), role, userId, user, access, areaId],
 
                 expressAsyncHandler(async (err, dbResults) => {
                     if (err) {
@@ -86,7 +67,7 @@ router.post("/register",
 
                     addLogToQueue(dbResults.insertId, user, `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.`);
 
-                    res.status(200).json({ message: "User registerd successfully.", data: IS_DEV ? dbResults : {} })
+                    return res.status(200).json({ message: "User registerd successfully.", data: IS_DEV ? dbResults : {} })
 
                 })
             )
