@@ -108,8 +108,9 @@ route.get('/supervisors',
             INNER JOIN 
                 user_roles ur ON u.user_role_id = ur.id
             WHERE 
-                ur.id = 1000001;
-      
+                ur.id = 1000001
+            AND u.access_id != 1000003
+            ;
         `, (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
