@@ -125,6 +125,8 @@ route.get('/supervisors',
     })
 )
 
+
+//update a user
 route.put('/update/:id',
     check(["id", "name", "phone"]).escape().notEmpty().withMessage("Please make sure all fields are present"),
     validationErrorMiddleware,
