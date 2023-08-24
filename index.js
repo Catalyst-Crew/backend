@@ -15,6 +15,7 @@ const areas = require("./src/routes/areas");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const settings = require("./src/routes/settings");
+const reports = require("./src/routes/reports");
 const dasboard = require("./src/routes/dashboard");
 const accessPoints = require("./src/routes/accessPoints");
 
@@ -36,7 +37,6 @@ app.use([
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 
 // //Connect to Db
-redisDb.connect();
 const isDev = process.env.IS_DEV === "true";
 
 if (!isDev) {
@@ -44,6 +44,7 @@ if (!isDev) {
         if (err) throw err;
         console.log("Database Connected");
     })
+    redisDb.connect();
 }
 
 //Routes here
@@ -53,6 +54,7 @@ app.use("/users", users);
 app.use("/logs", logs);
 app.use("/auth", auth);
 app.use("/areas", areas);
+app.use("/reports", reports);
 app.use("/settings", settings);
 app.use("/access-points", accessPoints);
 app.use("/dashboard", dasboard);
