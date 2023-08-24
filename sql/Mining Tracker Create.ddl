@@ -2,7 +2,7 @@ CREATE TABLE access (
   id        int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix char(5) DEFAULT 'acc-' NOT NULL, 
   name      char(10) NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE access_points (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'acc-' NOT NULL, 
@@ -13,7 +13,7 @@ CREATE TABLE access_points (
   status     tinyint(3) DEFAULT 1 NOT NULL, 
   device_id  char(50) UNIQUE, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE announcements (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'ann-' NOT NULL, 
@@ -21,15 +21,16 @@ CREATE TABLE announcements (
   name       char(255) NOT NULL, 
   message    varchar(255) DEFAULT 'No Message', 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE areas (
-  id         int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix  char(5) DEFAULT 'are-' NOT NULL, 
-  name       char(30) NOT NULL, 
-  lat        decimal(9, 6) NOT NULL, 
-  longitude  decimal(9, 6) NOT NULL, 
-  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
-  PRIMARY KEY (id));
+  id          int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix   char(5) DEFAULT 'are-' NOT NULL, 
+  name        char(30) NOT NULL, 
+  lat         decimal(9, 6) NOT NULL, 
+  longitude   decimal(9, 6) NOT NULL, 
+  created_at  datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  draw_coords varchar(255), 
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE logs (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'log-' NOT NULL, 
@@ -37,7 +38,7 @@ CREATE TABLE logs (
   loger_name char(30) DEFAULT 'System' NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   message    varchar(255) DEFAULT 'No Message' NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE measurements (
   id              int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix       char(5) DEFAULT 'mea-' NOT NULL, 
@@ -48,7 +49,7 @@ CREATE TABLE measurements (
   other_data      varchar(255) NOT NULL, 
   PRIMARY KEY (id), 
   INDEX (sensor_id), 
-  INDEX (access_point_id));
+  INDEX (access_point_id)) ENGINE=InnoDB;
 CREATE TABLE miners (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'min-' NOT NULL, 
@@ -59,13 +60,20 @@ CREATE TABLE miners (
   created_by char(20) DEFAULT 'System' NOT NULL, 
   updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
   updated_by char(20) DEFAULT 'System' NOT NULL, 
-  user_id    int(11) NOT NULL, 
+  user_id    int(11), 
   shift_id   int(11) NOT NULL, 
-  sensor_id  int(11), 
+  sensor_id  int(11) UNIQUE, 
   PRIMARY KEY (id), 
   INDEX (status), 
   INDEX (user_id), 
-  INDEX (shift_id));
+  INDEX (shift_id)) ENGINE=InnoDB;
+CREATE TABLE reports (
+  id         int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix  char(5) DEFAULT 'rep-' NOT NULL, 
+  user_id    int(11) DEFAULT 999999 NOT NULL, 
+  file_name  varchar(255) NOT NULL, 
+  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE sensor_alerts (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'ale-' NOT NULL, 
@@ -75,7 +83,7 @@ CREATE TABLE sensor_alerts (
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id), 
   INDEX (sensor_id), 
-  INDEX (status));
+  INDEX (status)) ENGINE=InnoDB;
 CREATE TABLE sensors (
   id         int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix  char(5) DEFAULT 'sen-' NOT NULL, 
@@ -88,23 +96,23 @@ CREATE TABLE sensors (
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id), 
   INDEX (status), 
-  INDEX (available));
+  INDEX (available)) ENGINE=InnoDB;
 CREATE TABLE settings (
   user_id             int(11) NOT NULL, 
   app_notifications   tinyint(1) DEFAULT 1 NOT NULL, 
   email_notifications tinyint(1) DEFAULT 1 NOT NULL, 
   dark_mode           tinyint(1) DEFAULT 0 NOT NULL, 
-  PRIMARY KEY (user_id));
+  PRIMARY KEY (user_id)) ENGINE=InnoDB;
 CREATE TABLE shifts (
   id        int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix char(5) DEFAULT 'shi-' NOT NULL, 
   name      char(10) NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE user_roles (
   id        int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix char(5) DEFAULT 'rol-' NOT NULL, 
   name      char(10) DEFAULT 'Day' NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
 CREATE TABLE users (
   id           int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix    char(5) DEFAULT 'user-' NOT NULL, 
@@ -116,10 +124,11 @@ CREATE TABLE users (
   created_at   datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   updated_by   char(20) DEFAULT 'System' NOT NULL, 
   updated_at   datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
-  phone        char(11) NOT NULL, 
+  phone        char(11) DEFAULT '' NOT NULL, 
   access_id    int(11) NOT NULL, 
   area_id      int(11) NOT NULL, 
-  PRIMARY KEY (id));
+  PRIMARY KEY (id)) ENGINE=InnoDB;
+ALTER TABLE reports ADD CONSTRAINT FKreports53332 FOREIGN KEY (user_id) REFERENCES users (id);
 ALTER TABLE users ADD CONSTRAINT FKusers813607 FOREIGN KEY (area_id) REFERENCES areas (id);
 ALTER TABLE announcements ADD CONSTRAINT FKannounceme740387 FOREIGN KEY (usersid) REFERENCES users (id);
 ALTER TABLE sensor_alerts ADD CONSTRAINT FKsensor_ale45012 FOREIGN KEY (sensor_id) REFERENCES sensors (id);

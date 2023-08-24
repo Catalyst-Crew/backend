@@ -29,7 +29,8 @@ router.get('/',
                 id_prefix, 
                 name, 
                 lat, 
-                longitude 
+                longitude,
+                draw_coords
             FROM 
                 areas;
             `,
@@ -38,7 +39,7 @@ router.get('/',
                     return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
-                res.status(200).json(dbResults)
+                return res.status(200).json(dbResults)
             }
         )
     })

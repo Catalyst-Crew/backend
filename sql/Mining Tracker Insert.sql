@@ -46,9 +46,11 @@ INSERT INTO areas
   name, 
   lat, 
   longitude, 
-  created_at) 
+  created_at, 
+  draw_coords) 
 VALUES 
   (?, 
+  ?, 
   ?, 
   ?, 
   ?, 
@@ -106,6 +108,18 @@ VALUES
   ?, 
   ?, 
   ?, 
+  ?, 
+  ?, 
+  ?, 
+  ?);
+INSERT INTO reports
+  (id, 
+  id_prefix, 
+  user_id, 
+  file_name, 
+  created_at) 
+VALUES 
+  (?, 
   ?, 
   ?, 
   ?, 
