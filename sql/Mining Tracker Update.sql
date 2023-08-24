@@ -27,7 +27,8 @@ UPDATE areas SET
   name = ?, 
   lat = ?, 
   longitude = ?, 
-  created_at = ? 
+  created_at = ?, 
+  draw_coords = ? 
 WHERE
   id = ?;
 UPDATE logs SET 
@@ -59,6 +60,13 @@ UPDATE miners SET
   user_id = ?, 
   shift_id = ?, 
   sensor_id = ? 
+WHERE
+  id = ?;
+UPDATE reports SET 
+  id_prefix = ?, 
+  user_id = ?, 
+  file_name = ?, 
+  created_at = ? 
 WHERE
   id = ?;
 UPDATE sensor_alerts SET 
