@@ -66,7 +66,7 @@ router.get('/',
 router.post('/create',
     [
         check('name', 'Name is required').escape().not().isEmpty(),
-        check('shift', 'Shift is not valid').escape().not().isEmpty(),
+        check('shift', 'Shift is not valid').escape().not().isEmpty().toInt(),
         check('email', 'Email is required').escape().isEmail(),
         check('userId', 'UserId creating the employee is required').not().isEmpty().toInt(),
         check('username', 'Username creating the employee is required').escape().not().isEmpty()
@@ -82,16 +82,13 @@ router.post('/create',
                 user_id, 
                 shift_id
                 ) 
-            VALUES(
-                ?, 
-                ?, 
-                ?, 
-                ?, 
-                ?
-                );
+            VALUES(?, ?, ?, ?, ? );
             `,
             [name, email, username, userId, shift], (err, dbResults) => {
-                if (err, dbResults) {
+                if (err) {
+                    if (ENV) {
+                        console.log(err);
+                    }
                     return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
