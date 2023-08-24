@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { Router } = require('express');
-const { createObjectCsvWriter } = require('csv-writer');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
+const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 const { verifyToken } = require('../utils/tokens');
 const { addLogToQueue } = require('../utils/logs');
@@ -26,7 +26,7 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 ))
 
 router.get('/', expressAsyncHandler(async (_, res) => {
-    db.query(`SELECT * FROM logs ORDER BY timestamp DESC;`,
+    db.query(`SELECT * FROM logs ORDER BY created_at DESC;`,
         (err, result) => {
             if (err) {
                 res.status(500).send({ message: err.message })
@@ -36,62 +36,94 @@ router.get('/', expressAsyncHandler(async (_, res) => {
         })
 }));
 
-router.post('/:id',
+router.post(
+    '/:id',
     [
         check('id', "userId is required to get the logs").escape().notEmpty(),
-        check('selection', "Not a valid array e.g: [1,2,3] or []").isArray()
+        check('selection', "Not a valid array e.g: [1,2,3] or []").isArray(),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { id, selection } = matchedData(req);
-        db.query(`
-            SELECT 
-                * 
-            FROM 
-                logs 
-        `, (err, result) => {
-            if (err) {
-                res.status(500).send({ message: "Can not perform that action right now #0", data: err.message })
-            }
+        try {
+            const { id, selection } = matchedData(req);
 
-            let logs = []
+            const logs = await retrieveLogs();
 
-            logs = selection.length > 0 ? result.filter(log => selection.includes(log.id)) : result;
+            let filteredLogs = [];
 
-            if (logs.length > 0) {
-                const filePath = path.join(__dirname, `../logs/log-export-${id}-${Date.now()}.csv`)
+            filteredLogs = selection.length > 0 ? logs.filter(log => selection.includes(log.id)) : logs;
+
+            if (filteredLogs.length > 0) {
+                const docsDir = path.join(__dirname, '../docs');
+                if (!fs.existsSync(docsDir)) {
+                    fs.mkdirSync(docsDir);
+                }
+
+                const filePath = path.join(__dirname, `../docs/log-export-${id}-${Date.now()}.csv`);
 
                 const csvWriter = createObjectCsvWriter({
                     path: filePath,
                     header: [
                         { id: 'id', title: 'ID' },
-                        { id: 'generatee_id', title: 'Generatee_Id' },
-                        { id: 'generatee_name', title: 'Generatee_Name' },
-                        { id: 'timestamp', title: 'Created_At' },
-                        { id: 'massage', title: 'Message' },
+                        { id: 'id_prefix', title: 'ID prefix' },
+                        { id: 'loger_id', title: 'Generatee_Id' },
+                        { id: 'loger_name', title: 'Generatee_Name' },
+                        { id: 'created_at', title: 'Created_At' },
+                        { id: 'message', title: 'Message' },
                     ],
-                    recordDelimiter: '\r\n'
+                    recordDelimiter: '\r\n',
                 });
 
-                csvWriter.writeRecords(logs)
-                    .then(() => {
-                        res.download(filePath, (err) => {
+                await new Promise((resolve, reject) => {
+                    csvWriter.writeRecords(filteredLogs)
+                        .then(() => resolve())
+                        .catch(err => reject(err));
+                });
+
+                res.download(filePath, expressAsyncHandler(async (err) => {
+                    if (err) {
+                        return res.status(500).send({ message: "Can not perform that action right now #1", data: err.message });
+                    }
+
+                    addLogToQueue(id, "Logs", `Downloaded ${filteredLogs.length} logs on ${getTimestamp()}`);
+
+                    await new Promise((resolve, reject) => {
+                        fs.unlink(filePath, err => {
                             if (err) {
-                                return res.status(500).send({ message: "Can not perform that action right now #1", data: err.message })
+                                reject(err);
+                            } else {
+                                resolve();
                             }
+                        });
+                    });
+                }));
 
-                            addLogToQueue(id, "Logs", `Downloaded ${logs.length} logs on ${getTimestamp()}`)
-
-                            return fs.unlinkSync(filePath)  //delete file
-                        })
-                    }).catch(err => {
-                        return res.status(500).send({ message: "Can not perform that action now #2", data: err.message })
-                    })
-
+            } else {
+                return res.status(404).send({ message: "No logs found" });
             }
-            res.status(404).send({ message: "No logs found" })
-        })
+        } catch (err) {
+            return res.status(500).send({ message: "Error processing request", error: err.message });
+        }
     })
-)
+);
 
-module.exports = router
+async function retrieveLogs() {
+    return new Promise((resolve, reject) => {
+        db.query('SELECT * FROM logs', (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+module.exports = router;
+
+
+
+
+
+
+

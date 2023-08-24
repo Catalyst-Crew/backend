@@ -1,15 +1,18 @@
 CREATE TABLE access (
   id        int(11) NOT NULL AUTO_INCREMENT, 
   id_prefix char(5) DEFAULT 'acc-' NOT NULL, 
-  name      int(11) NOT NULL, 
+  name      char(10) NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE access_points (
-  id        int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix char(5) DEFAULT 'acc-' NOT NULL, 
-  area_id   int(11) NOT NULL, 
-  name      char(30) NOT NULL, 
-  lat       decimal(9, 6) NOT NULL, 
-  longitude decimal(9, 6) NOT NULL, 
+  id         int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix  char(5) DEFAULT 'acc-' NOT NULL, 
+  area_id    int(11) NOT NULL, 
+  name       char(30) NOT NULL, 
+  lat        decimal(9, 6) NOT NULL, 
+  longitude  decimal(9, 6) NOT NULL, 
+  status     tinyint(3) DEFAULT 1 NOT NULL, 
+  device_id  char(50) UNIQUE, 
+  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE announcements (
   id         int(11) NOT NULL AUTO_INCREMENT, 
@@ -20,11 +23,12 @@ CREATE TABLE announcements (
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE areas (
-  id        int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix char(5) DEFAULT 'are-' NOT NULL, 
-  name      char(30) NOT NULL, 
-  lat       decimal(9, 6) NOT NULL, 
-  longitude decimal(9, 6) NOT NULL, 
+  id         int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix  char(5) DEFAULT 'are-' NOT NULL, 
+  name       char(30) NOT NULL, 
+  lat        decimal(9, 6) NOT NULL, 
+  longitude  decimal(9, 6) NOT NULL, 
+  created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE logs (
   id         int(11) NOT NULL AUTO_INCREMENT, 
@@ -53,11 +57,11 @@ CREATE TABLE miners (
   status     tinyint(1) DEFAULT 1 NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, 
   created_by char(20) DEFAULT 'System' NOT NULL, 
-  updated_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
   updated_by char(20) DEFAULT 'System' NOT NULL, 
   user_id    int(11) NOT NULL, 
   shift_id   int(11) NOT NULL, 
-  sensor_id  int(11) NOT NULL, 
+  sensor_id  int(11), 
   PRIMARY KEY (id), 
   INDEX (status), 
   INDEX (user_id), 
@@ -67,7 +71,7 @@ CREATE TABLE sensor_alerts (
   id_prefix  char(5) DEFAULT 'ale-' NOT NULL, 
   sensor_id  int(11) NOT NULL, 
   name       char(50) NOT NULL, 
-  status     char(255) DEFAULT '1' NOT NULL, 
+  status     tinyint(3) DEFAULT 1 NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id), 
   INDEX (sensor_id), 
@@ -79,7 +83,7 @@ CREATE TABLE sensors (
   device_id  char(50) UNIQUE, 
   available  tinyint(1) DEFAULT 1 NOT NULL, 
   updated_by char(20) DEFAULT 'System' NOT NULL, 
-  updated_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
   created_by char(20) NOT NULL, 
   created_at datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
   PRIMARY KEY (id), 
@@ -97,29 +101,28 @@ CREATE TABLE shifts (
   name      char(10) NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE user_roles (
-  id        tinyint(3) NOT NULL AUTO_INCREMENT, 
-  id_prefix char(255) DEFAULT 'rol-' NOT NULL, 
+  id        int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix char(5) DEFAULT 'rol-' NOT NULL, 
   name      char(10) DEFAULT 'Day' NOT NULL, 
   PRIMARY KEY (id));
 CREATE TABLE users (
-  id              int(11) NOT NULL AUTO_INCREMENT, 
-  id_prefix       char(5) DEFAULT 'user-' NOT NULL, 
-  name            char(20) DEFAULT 'No Name' NOT NULL, 
-  email           char(100) DEFAULT 'system@email.com' NOT NULL UNIQUE, 
-  password        varchar(255) NOT NULL, 
-  user_role_id    tinyint(3) NOT NULL, 
-  created_by      char(20) DEFAULT 'System' NOT NULL, 
-  created_at      datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
-  updated_by      char(20) DEFAULT 'System' NOT NULL, 
-  updated_at      datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
-  phone           char(11) NOT NULL, 
-  access_id       int(11) NOT NULL, 
-  access_point_id int(11) NOT NULL, 
+  id           int(11) NOT NULL AUTO_INCREMENT, 
+  id_prefix    char(5) DEFAULT 'user-' NOT NULL, 
+  name         char(20) DEFAULT 'No Name' NOT NULL, 
+  email        char(100) DEFAULT 'system@email.com' NOT NULL UNIQUE, 
+  password     varchar(255) NOT NULL, 
+  user_role_id int(11) NOT NULL, 
+  created_by   char(20) DEFAULT 'System' NOT NULL, 
+  created_at   datetime DEFAULT CURRENT_TIMESTAMP  NOT NULL, 
+  updated_by   char(20) DEFAULT 'System' NOT NULL, 
+  updated_at   datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL, 
+  phone        char(11) NOT NULL, 
+  access_id    int(11) NOT NULL, 
+  area_id      int(11) NOT NULL, 
   PRIMARY KEY (id));
-  
+ALTER TABLE users ADD CONSTRAINT FKusers813607 FOREIGN KEY (area_id) REFERENCES areas (id);
 ALTER TABLE announcements ADD CONSTRAINT FKannounceme740387 FOREIGN KEY (usersid) REFERENCES users (id);
 ALTER TABLE sensor_alerts ADD CONSTRAINT FKsensor_ale45012 FOREIGN KEY (sensor_id) REFERENCES sensors (id);
-ALTER TABLE users ADD CONSTRAINT FKusers375527 FOREIGN KEY (access_point_id) REFERENCES areas (id);
 ALTER TABLE measurements ADD CONSTRAINT FKmeasuremen498651 FOREIGN KEY (access_point_id) REFERENCES access_points (id);
 ALTER TABLE access_points ADD CONSTRAINT FKaccess_poi369117 FOREIGN KEY (area_id) REFERENCES areas (id);
 ALTER TABLE measurements ADD CONSTRAINT FKmeasuremen1268 FOREIGN KEY (sensor_id) REFERENCES sensors (id);

@@ -3,8 +3,9 @@ const { Router } = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const { check, validationResult, matchedData } = require("express-validator");
 
+const { db } = require('../utils/database');
 const { addLogToQueue } = require('../utils/logs');
-const { db, getTimestamp } = require('../utils/database');
+const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const route = Router();
 
@@ -21,28 +22,27 @@ route.put('/:id',
         const { id, access, areaId, user, role } = matchedData(req);
 
         db.execute(
-            `UPDATE users 
-                SET 
-                access = ?, 
-                areasid = ?, 
+            `UPDATE 
+                users 
+            SET 
+                access_id = ?, 
+                area_id = ?,
                 updated_by = ?, 
-                role = ?, 
-                last_updated = ? 
-            WHERE id = ?;`,
-            [access, areaId, user, role, getTimestamp(), id],
+                user_role_id = ? 
+            WHERE
+                id = ?;`,
+            [parseInt(access), parseInt(areaId), user, parseInt(role), parseInt(id)],
             (err, dbResults) => {
                 if (err) {
+                    console.log(err);
                     return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
-                addLogToQueue(id, "User", `User ${id} updated by ${user}`);
-
                 if (dbResults.affectedRows) {
-                    addLogToQueue(id, "User", `User updated successfully by ${user} at ${getTimestamp()} with id ${id} and role ${role} and access ${access} and areaId ${areaId}`);
-
-                    return res.status(200).json({ message: "User updated successfully" });
+                    addLogToQueue(id, "User", `User updated successfully by ${user} with id ${id} and role ${role} and access ${access} and areaId ${areaId}`);
                 }
 
+                return res.status(200).json({ message: "User updated successfully" });
             }
         )
     })
@@ -52,21 +52,31 @@ route.put('/:id',
 route.get('/',
     expressAsyncHandler(async (_, res) => {
         db.execute(`
-        SELECT
-            users.id,
-            users.name,
-            users.role,
-            users.email,
-            users.created_by,
-            users.updated_by,
-            users.last_updated,
-            users.created,
-            users.access,
-            areas.name AS area,
-            areas.id AS areaId
-        FROM
-            users
-        LEFT JOIN areas ON users.areasid = areas.id;`,
+            SELECT 
+                u.id AS user_id,
+                u.id_prefix AS user_id_prefix,
+                u.name AS user_name,
+                ur.id AS role_id,
+                ur.name AS role_name,
+                u.email,
+                u.created_by,
+                u.created_at,
+                u.updated_by,
+                u.updated_at,
+                a.id AS access_id,
+                a.name AS access_name,
+                u.area_id,
+                ar.name AS area_name
+            FROM 
+                users u
+            INNER JOIN 
+                user_roles ur ON u.user_role_id = ur.id
+            INNER JOIN 
+                access a ON u.access_id = a.id
+            INNER JOIN
+                areas ar ON u.area_id = ar.id     
+                ;
+            `,
             (err, dbResults) => {
                 if (err) {
                     return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
@@ -82,17 +92,23 @@ route.get('/',
     })
 )
 
-//get all users
+//get all supervisors
 route.get('/supervisors',
     expressAsyncHandler(async (_, res) => {
         db.execute(`
-            SELECT
-                id,
-                name
-            FROM
-                users
-            WHERE
-                role = 'supervisor' AND access = 'granted';
+            SELECT 
+                u.id AS user_id,
+                u.id_prefix AS user_id_prefix,
+                u.name AS user_name,
+                ur.name AS role_name,
+                ur.id AS role_id
+            FROM 
+                users u
+            INNER JOIN 
+                user_roles ur ON u.user_role_id = ur.id
+            WHERE 
+                ur.id = 1000001;
+      
         `, (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
@@ -104,6 +120,36 @@ route.get('/supervisors',
 
             res.status(202).json({ message: "No supervisors found" });
         }
+        )
+    })
+)
+
+route.put('/update/:id',
+    check(["id", "name", "phone"]).escape().notEmpty().withMessage("Please make sure all fields are present"),
+    validationErrorMiddleware,
+    expressAsyncHandler(async (req, res) => {
+        const { id, name, phone } = matchedData(req);
+
+        db.execute(
+            `UPDATE
+                users
+            SET
+                name = ?,
+                phone = ?
+            WHERE
+                id = ?;`,
+            [name, phone, parseInt(id)],
+            (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
+                }
+
+                if (dbResults.affectedRows) {
+                    addLogToQueue(id, "User", `User updated successfully by ${name} with id ${id} and phone ${phone}`);
+                }
+
+                return res.status(200).json({ message: "User updated successfully" });
+            }
         )
     })
 )

@@ -32,9 +32,9 @@ router.get('/',
                 sensor_id,
                 name,
                 status,
-                create_id
+                created_at
             FROM
-                alerts
+                sensor_alerts;
         `;
 
         db.execute(sqlQuery, [], (err, dbResults) => {
@@ -54,21 +54,14 @@ router.put('/:id',
     ],
     validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
-        const { id,name} = matchedData(req);
+        const { id, name } = matchedData(req);
         const sqlQuery = `
-        UPDATE
-            settings
-        SET
-            id=?,
-            id_prefix=?,
-            sensor_id=?,
-            name=?,
-            status=?,
-            create_id=?
-        WHERE
-           id=?         
+            UPDATE sensor_alerts SET 
+                status = 2
+            WHERE
+                id = ?;   
         `;
-        db.execute(sqlQuery, [id,name], (err, dbResults) => {
+        db.execute(sqlQuery, [id, name], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
@@ -84,21 +77,28 @@ router.put('/:id',
 
 
 router.post('/',
+
+
+    [
+        check("sensor", "sensor is required").escape().notEmpty(),
+        check("name", "name is required").escape().notEmpty()
+    ],
     validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
-    const sqlQuery = `
-            SELECT
-                id,
-                id_prefix,
+        const { sensor, name } = matchedData(req);
+
+        const sqlQuery = `
+            INSERT INTO
+                sensor_alerts (
                 sensor_id,
                 name,
-                status,
-                create_id
-            FROM
-                alerts
+                status
+                )
+            VALUES
+                (?, ?, ?);
         `;
 
-        db.execute(sqlQuery, [], (err, dbResults) => {
+        db.execute(sqlQuery, [sensor, name, 1], (err, dbResults) => {
             if (err) {
                 return res.status(500).json({ error: ENV ? err : 1 });
             }
