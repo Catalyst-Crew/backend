@@ -41,13 +41,12 @@ function generateMeasurments() {
     `,
     [currentDate], expressAsyncHandler(async (err, data) => {
       if (err) {
-        console.log(`$ Error while fetching old measurment records`);
-        console.error(err);
-        //addLogToQueue(999_999, "Cron Job", "Failed to generate logs with error: "+ JSON.stringify({ err }))
+        addLogToQueue(999_999, "Cron Job", `Failed to generate logs with error: ${JSON.stringify(err)}`)
         return
       }
 
-      const filePath = path.join(__dirname, `../docs/measurement-${Date.now()}.csv`);
+      const logFileName = `measurement-${Date.now()}.csv`;
+      const filePath = path.join(__dirname, `../docs/${logFileName}`);
 
       const csvWriter = createObjectCsvWriter({
         path: filePath,
@@ -71,17 +70,16 @@ function generateMeasurments() {
             VALUES 
               (?, ?);
           `,
-            [999_999, filePath], (err, dbResults) => {
+            [999_999, logFileName], (err, dbResults) => {
               if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new measurements report. Data: " + JSON.stringify(err))
+                addLogToQueue(999_999, "Reports", `Failed to generate a new measurements report. Data: ${JSON.stringify(err)}`)
                 return;
               }
-              addLogToQueue(999_999, "Reports", "New report genetated for measurement with id " + dbResults.insertId)
+              addLogToQueue(999_999, "Reports", `New report genetated for measurement with id ${dbResults.insertId}`)
             }
           )
         }
       ).catch(err => console.error(err));
-
       return;
     })
   )
