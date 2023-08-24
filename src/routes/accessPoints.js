@@ -36,7 +36,7 @@ router.get('/',
                 ap.device_id AS device_id,
                 a.id_prefix AS area_id_prefix,
                 a.name AS area_name,
-                CONCAT(a.lat, ",", a.longitude) AS location,
+                CONCAT(a.lat,',',a.longitude) AS location,
                 a.lat AS area_lat,
                 a.longitude AS area_longitude
             FROM
@@ -142,31 +142,53 @@ router.put('/full/:id',
 );
 
 router.post('/',
+    [
+        check("area_id", "area_id is required").escape().notEmpty().isNumeric().toInt(),
+        check("name", "name is required").escape().notEmpty().isString(),
+        check("latitude", "latitude is required").escape().notEmpty().isNumeric().toInt(),
+        check("longitude", "longitude is required").escape().notEmpty().isNumeric().toInt(),
+        check("status", "status is required").escape().notEmpty().isNumeric().toInt(),
+        check("device_id", "device_id is required").escape().isString(),
+        check("username", "username is required").escape().notEmpty().isString()
+    ],
     validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
-        const sqlQuery = `
-            SELECT
-                id,
-                id_prefix,
-                areas_id,
-                name,
-                lat,
-                lot
-            FROM
-                accessPoints
-       //     WHERE
-       //         id=?
-     //       LIMIT 1
-        `;
+        const { area_id, name, latitude, longitude, status, device_id, username } = matchedData(req);
 
-        db.execute(sqlQuery, [], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 1 });
-            }
+        const deviceId = device_id ? device_id : null;
 
+        db.execute(`
+            INSERT INTO access_points(
+                area_id, 
+                name, 
+                lat, 
+                longitude, 
+                status, 
+                device_id
+            ) 
+            VALUES(
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?
+            );`,
+            [area_id, name, parseInt(latitude), parseInt(longitude), parseInt(status), deviceId],
+            expressAsyncHandler((err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ error: ENV ? err : 1 });
+                }
 
-            res.status(200).json(dbResults)
-        })
+                if (dbResults.affectedRows < 1) {
+                    return res.status(400).json({ message: "Access Point not created" })
+                }
+
+                addLogToQueue(username, "Access-Point", `Access Point created successfully by ${username} with area_id ${area_id} and name ${name} and lat ${latitude} and longitude ${longitude} and device_id ${deviceId}`);
+
+                return res.status(200).json({ message: "Access Point created successfully" })
+            })
+        )
     })
 );
 

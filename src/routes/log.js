@@ -6,7 +6,7 @@ const expressAsyncHandler = require('express-async-handler');
 const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
+const { addLogToQueue, addReportToQueue } = require('../utils/logs');
 const { db, getTimestamp } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
@@ -39,7 +39,7 @@ router.get('/', expressAsyncHandler(async (_, res) => {
 router.post(
     '/:id',
     [
-        check('id', "userId is required to get the logs").escape().notEmpty(),
+        check('id', "userId is required to get the logs").escape().notEmpty().toInt(),
         check('selection', "Not a valid array e.g: [1,2,3] or []").isArray(),
     ],
     validationErrorMiddleware,
@@ -59,7 +59,8 @@ router.post(
                     fs.mkdirSync(docsDir);
                 }
 
-                const filePath = path.join(__dirname, `../docs/log-export-${id}-${Date.now()}.csv`);
+                const logFileName = `log-export-${id}-${Date.now()}.csv`;
+                const filePath = path.join(__dirname, `../docs/${logFileName}`);
 
                 const csvWriter = createObjectCsvWriter({
                     path: filePath,
@@ -87,15 +88,8 @@ router.post(
 
                     addLogToQueue(id, "Logs", `Downloaded ${filteredLogs.length} logs on ${getTimestamp()}`);
 
-                    await new Promise((resolve, reject) => {
-                        fs.unlink(filePath, err => {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve();
-                            }
-                        });
-                    });
+                    addReportToQueue(id, "Logs", logFileName)
+
                 }));
 
             } else {
@@ -105,6 +99,28 @@ router.post(
             return res.status(500).send({ message: "Error processing request", error: err.message });
         }
     })
+);
+
+router.get("/:file_name",
+    check('file_name', "file id is required to get the document").escape().notEmpty(),
+    validationErrorMiddleware,
+    expressAsyncHandler(
+        async (req, res) => {
+            const { file_name } = matchedData(req);
+
+            const filePath = path.join(__dirname, `../docs/${file_name}`);
+
+            if (fs.existsSync(filePath)) {
+                res.download(filePath, expressAsyncHandler(async (err) => {
+                    if (err) {
+                        return res.status(500).send({ message: "Can not perform that action right now #1", data: err.message });
+                    }
+                }));
+            } else {
+                return res.status(404).send({ message: "File not found" });
+            }
+        }
+    )
 );
 
 async function retrieveLogs() {

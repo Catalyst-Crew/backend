@@ -25,20 +25,7 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 //get all sensors
 router.get('/',
     expressAsyncHandler((_, res) => {
-        const sqlQuery = ENV ? `
-                SELECT 
-                    id,
-                    id_prefix,
-                    status,
-                    device_id,
-                    available,
-                    updated_by,
-                    updated_at,
-                    created_by,
-                    created_at
-                FROM 
-                    sensors
-                ;` : `
+        const sqlQuery = `
                 SELECT 
                     id,
                     id_prefix,
@@ -71,6 +58,7 @@ router.get('/',
     })
 );
 
+//get all sensors regardless of status
 router.get('/all',
     expressAsyncHandler((_, res) => {
         const sqlQuery = `
@@ -189,6 +177,7 @@ router.put('/',
     })
 )
 
+// PUT /update sensor remove device from sensor
 router.put('/unassign',
     [
         check('id', 'ID is required').escape().not().isEmpty(),
@@ -228,6 +217,7 @@ router.put('/unassign',
     })
 );
 
+// PUT /update sensor remove sensor from miner
 router.put('/unassign/:id',
     [
         check('id', 'ID is required').escape().not().isEmpty(),
