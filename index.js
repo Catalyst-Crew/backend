@@ -18,12 +18,12 @@ const users = require("./src/routes/users");
 const areas = require("./src/routes/areas");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
-const settings = require("./src/routes/settings");
 const reports = require("./src/routes/reports");
+const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
+const centralEmitter = require("./src/utils/events");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
-const centralEmitter = require("./src/utils/events");
 
 
 const app = express();
@@ -44,30 +44,29 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
-db.getConnection((err) => {
-    if (err) throw err;
-    db.query("SET time_zone = '+02:00';", (err) => {
+if (!isDev) {
+    db.getConnection((err) => {
         if (err) throw err;
-        console.log("Database Connected");
+        db.query("SET time_zone = '+02:00';", (err) => {
+            if (err) throw err;
+            console.log("Database Connected");
+        })
+        redisDb.connect()
     })
-    redisDb.connect();
 }
-    });
-    console.log("Database Connected");
-})
 
 //Routes here
 app.use("/auth", auth);
 app.use("/logs", logs);
 app.use("/areas", areas);
-app.use("/reports", reports);
 app.use("/users", users);
 app.use("/miners", miners);
 app.use("/sensors", sensors);
+app.use("/reports", reports);
 app.use("/settings", settings);
 app.use("/dashboard", dasboard);
-app.use("/access-points", accessPoints);
 app.use("/measurements", measurements);
+app.use("/access-points", accessPoints);
 app.all("/", (_, res) => {
     res.send("OK");
 });
@@ -82,7 +81,6 @@ app.use((err, _, res, __) => {
         trycatch(() => addLogToQueue(999_999, "Server", `${err.message} ${at}`), (err) => console.log(err.message));
     }
 });
-
 
 //Start the server
 trycatch(() => (server.listen(PORT, () => {
