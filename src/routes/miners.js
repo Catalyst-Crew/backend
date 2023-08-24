@@ -2,9 +2,9 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
-const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { addLogToQueue } = require('../utils/logs');
+const { db, connection } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
@@ -175,77 +175,60 @@ router.put("/:id",
 //delete employee
 router.delete("/deactivate/:id/:userId",
     [
-        check('id', 'Miner is required').not().isEmpty().isNumeric().toInt(),
+        check('id', 'Miner is required').escape().notEmpty().toInt(),
         check('userId', 'UserId is required').escape().not().isEmpty()
     ],
     validationErrorMiddleware,
-    expressAsyncHandler((req, res) => {
+    expressAsyncHandler(async (req, res) => {
         const { id, userId } = matchedData(req);
 
-        //get the sensor id
-        db.execute(`
-            SELECT
-                sensor_id
-            FROM
-                miners
-            WHERE
-                id = ?;
-            `,
-            [id], (err, dbResults) => {
-                if (err) {
-                    return res.status(500).json({ error: ENV ? err : 1 });
-                }
+        try {
+            (await connection).beginTransaction();
 
-                if (dbResults.length !== 0) {
-                    db.execute(`
-                        UPDATE miners SET
-                            sensor_id = null, 
-                            shift = 1000003,
-                            updated_by = ?, 
-                            status = 2 
-                        WHERE
-                            id = ?;
-                        `,
-                        [userId, id], (err, dbResults) => {
-                            if (err) {
-                                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
-                            }
+            // Get the sensor id
+            const [sensorRows] = await (await connection).execute(
+                'SELECT sensor_id FROM miners WHERE id = ?',
+                [id]
+            );
 
-                            if (dbResults.affectedRows === 0) {
-                                return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
-                            }
-
-                            //set node to available
-                            db.execute(`
-                                UPDATE
-                                    sensors
-                                SET
-                                    available = 1
-                                WHERE
-                                    id = ?;
-                                `,
-                                [sensorsid], (err, dbResults) => {
-                                    if (err) {
-                                        return res.status(500).json({ error: ENV ? err : 1 });
-                                    }
-
-                                    if (dbResults.affectedRows === 0) {
-                                        return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
-                                    }
-
-                                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
-
-                                    return res.status(200).json({ message: "Employee updated successfully.", data: {} })
-                                }
-                            )
-                        }
-                    )
-                    return;
-                }
-                addLogToQueue(id, userId, `Employee deactivated successfully by ${userId} with id ${id}`);
-                return res.status(200).json({ message: "User deactivate successfully.", data: {} })
+            if (sensorRows.length === 0) {
+                (await connection).rollback();
+                return res.status(500).json({ message: 'Employee not found.' });
             }
-        )
+
+            if (sensorRows[0].sensor_id === null) {
+                (await connection).execute(
+                    'UPDATE miners SET status = 2 WHERE id = ?',
+                    [id]
+                );
+            } else {
+                const sensorId = sensorRows[0].sensor_id;
+
+                // Update miners
+                (await connection).execute(
+                    'UPDATE miners SET sensor_id = null, shift_id = 1000003, updated_by = ?, status = 2 WHERE id = ?',
+                    [userId, id]
+                );
+
+                // Set sensor to available
+                (await connection).execute(
+                    'UPDATE sensors SET available = 1 WHERE id = ?',
+                    [sensorId]
+                );
+            }
+
+            (await connection).commit();
+
+            addLogToQueue(userId, "Miner", `Employee deactivated successfully by ${userId}`);
+
+            return res.status(200).json({ message: 'Employee deactivated successfully.', data: {} });
+        } catch (error) {
+            (await connection).rollback();
+            console.error('Transaction Error:', error);
+            return res.status(500).json({ error: error.message });
+        } finally {
+            (await connection).end();
+        }
     })
 )
 
@@ -256,73 +239,56 @@ router.delete("/delete/:id/:userId",
         check('userId', 'UserId is required').escape().not().isEmpty()
     ],
     validationErrorMiddleware,
-    expressAsyncHandler((req, res) => {
+    expressAsyncHandler(async (req, res) => {
         const { id, userId } = matchedData(req);
 
-        //get the sensor id
-        db.execute(`
-            SELECT
-                sensor_id
-            FROM
-                miners
-            WHERE
-                id = ?;
-            `,
-            [id], (err, dbResults) => {
-                if (err) {
-                    return res.status(500).json({ error: ENV ? err : 1 });
-                }
+        try {
+            (await connection).beginTransaction();
 
-                if (dbResults.length !== 0) {
-                    db.execute(`
-                        UPDATE miners SET
-                            sensor_id = null, 
-                            shift = 1000003,
-                            updated_by = ?, 
-                            status = 3 
-                        WHERE
-                            id = ?;
-                        `,
-                        [userId, id], (err, dbResults) => {
-                            if (err) {
-                                return res.status(500).json({ message: "Cannot perform that action rigth now", error: ENV ? err : 1 });
-                            }
+            // Get the sensor id
+            const [sensorRows] = await (await connection).execute(
+                'SELECT sensor_id FROM miners WHERE id = ?',
+                [id]
+            );
 
-                            if (dbResults.affectedRows === 0) {
-                                return res.status(500).json({ message: "Failed deactivating employee, please try again.", error: ENV ? err : 1 });
-                            }
-
-                            //set node to available
-                            db.execute(`
-                                UPDATE
-                                    sensors
-                                SET
-                                    available = 1
-                                WHERE
-                                    id = ?;
-                                `,
-                                [sensorsid], (err, dbResults) => {
-                                    if (err) {
-                                        return res.status(500).json({ error: ENV ? err : 1 });
-                                    }
-
-                                    if (dbResults.affectedRows === 0) {
-                                        return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
-                                    }
-
-                                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
-
-                                    return res.status(200).json({ message: "Employee updated successfully.", data: {} })
-                                }
-                            )
-                        }
-                    )
-                    return;
-                }
-                addLogToQueue(id, userId, `Employee deactivated successfully by ${userId} with id ${id}`);
-                return res.status(200).json({ message: "User deactivate successfully.", data: {} })
+            if (sensorRows.length === 0) {
+                (await connection).rollback();
+                return res.status(500).json({ message: 'Employee not found.' });
             }
-        )
+
+            if (sensorRows[0].sensor_id === null) {
+                (await connection).execute(
+                    'UPDATE miners SET status = 3 WHERE id = ?',
+                    [id]
+                );
+            } else {
+                const sensorId = sensorRows[0].sensor_id;
+
+                // Update miners
+                (await connection).execute(
+                    'UPDATE miners SET sensor_id = null, shift_id = 1000003, updated_by = ?, status = 3 WHERE id = ?',
+                    [userId, id]
+                );
+
+                // Set sensor to available
+                (await connection).execute(
+                    'UPDATE sensors SET available = 1 WHERE id = ?',
+                    [sensorId]
+                );
+            }
+
+            (await connection).commit();
+
+            addLogToQueue(userId, "Miner", `Employee Deleted successfully by ${userId}`);
+
+            return res.status(200).json({ message: 'Employee deleted successfully.', data: {} });
+        } catch (error) {
+            (await connection).rollback();
+            console.error('Transaction Error:', error);
+            return res.status(500).json({ error: error.message });
+        } finally {
+            (await connection).end();
+        }
     })
 )
 
