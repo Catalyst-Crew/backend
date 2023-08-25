@@ -119,8 +119,6 @@ router.put("/:id",
 
         const sensor_id = sensorsid ? sensorsid : null;
 
-        console.log("sensor_id: ", sensor_id);
-
         db.execute(`
             UPDATE miners SET 
                 status = 1,  
@@ -226,8 +224,6 @@ router.delete("/deactivate/:id/:userId",
             (await connection).rollback();
             console.error('Transaction Error:', error);
             return res.status(500).json({ error: error.message });
-        } finally {
-            (await connection).end();
         }
     })
 )
@@ -286,8 +282,6 @@ router.delete("/delete/:id/:userId",
             (await connection).rollback();
             console.error('Transaction Error:', error);
             return res.status(500).json({ error: error.message });
-        } finally {
-            (await connection).end();
         }
     })
 )
