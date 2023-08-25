@@ -1,5 +1,6 @@
+const { db } = require('./database');
 const { Worker, Queue } = require('bullmq');
-const { db, getNewID, getTimestamp } = require('./database');
+
 
 const CONNECTION = {
     host: process.env.REDIS_HOST,
@@ -8,42 +9,43 @@ const CONNECTION = {
     username: process.env.REDIS_USERNAME
 }
 
-const worker = new Worker('logger',
+new Worker('logger',
     async job => {
-        db.execute(`
-        INSERT INTO logs
-        (
-            id, 
-            generatee_id, 
-            generatee_name, 
-            timestamp, 
-            massage
-        ) 
-        VALUES 
-        (
-            ?, 
-            ?, 
-            ?, 
-            ?, 
-            ?
-        );`,
-            [getNewID("LOG-"), job.data.generatee_id, job.data.generatee_name, getTimestamp(), job.data.massage],
-            (err) => {
-                if (err) return process.env.IS_DEV === "true" ? console.log(err) : "Logging failed due to database error";
-            })
+        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
+            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
+    }, {
+    connection: CONNECTION
+});
+new Worker('logger',
+    async (job) => {
+        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
+            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
+    }, {
+    connection: CONNECTION
+});
+new Worker('report',
+    async (job) => {
+        db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
+            [job.data.id, job.data.file_name])
     }, {
     connection: CONNECTION
 });
 
+
 const myQueue = new Queue('logger', {
     connection: CONNECTION
 });
+const report = new Queue('report', {
+    connection: CONNECTION
+});
 
-async function addLogToQueue(generatee_id, generatee_name, massage) {
+
+function addLogToQueue(generatee_id, generatee_name, massage) {
     myQueue.add('log', { generatee_id, generatee_name, massage });
 }
 
-//Example of how you use the logger 
-//addLogToQueue("TEST-123456789", "Test", "This is a test massage")
+function addReportToQueue(id = 999_999, file_name) {
+    report.add('report', { id, file_name });
+}
 
-module.exports = { worker, addLogToQueue }
+module.exports = { addLogToQueue, addReportToQueue };
