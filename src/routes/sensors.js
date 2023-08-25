@@ -2,9 +2,9 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
-const { db } = require('../utils/database');
 const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
+const { db, connection } = require('../utils/database');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
@@ -180,75 +180,97 @@ router.put('/',
 // PUT /update sensor remove device from sensor
 router.put('/unassign',
     [
-        check('id', 'ID is required').escape().not().isEmpty(),
-        check('device_id', 'DeviceId is required').escape().not().isEmpty(),
-        check('username', 'Username is required').escape().not().isEmpty()
+        check('id', 'ID is required').escape().not().isEmpty().toInt(),
+        check('username', 'Username is required').escape().not().isEmpty().toInt()
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { id, device_id, username } = matchedData(req);
+        const { id, username } = matchedData(req);
 
-        const sqlQuery = `
-            UPDATE
-                sensors
-            SET
-                available = 0,
-                status = 1, 
-                device_id = null, 
-                available = 1, 
-                updated_by = ?
-            WHERE
-                id = ?;
-        `;
+        try {
+            (await connection).beginTransaction();
 
-        db.execute(sqlQuery, [username, parseInt(id)], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 1 });
-            }
+            await (await connection).execute(`
+                UPDATE
+                    miners
+                SET
+                    sensor_id = null,
+                    updated_by = ?
+                WHERE
+                    sensor_id = ?;
+                `, [username, parseInt(id)]);
 
-            if (dbResults.affectedRows === 0) {
-                return res.status(202).json({ message: "Sensor not updated." });
-            }
+            (await connection).execute(
+                'UPDATE sensors SET available = 0, status = 0, device_id = null WHERE id = ?',
+                [parseInt(id)]
+            ).then(async ([dbResults]) => {
+                if (dbResults.affectedRows === 0) {
+                    (await connection).rollback();
+                    return res.status(400).json({ message: "Sensor not updated. #2" });
+                }
+            });
 
-            addLogToQueue(id, Sensor, `Sensor ${id} unassigned successfully by ${username} with deviceid ${device_id}`);
+            await (await connection).commit();
 
-            res.status(200).json({ message: "Sensor unassigned successfully." })
-        })
+            addLogToQueue(username, "Sensor", `Sensor unattaced from device successfully by ${username}`);
+
+            res.status(200).json({ message: "Sensor unassigned successfully." });
+        } catch (err) {
+            await (await connection).rollback();
+            console.error('Transaction Error:', err);
+            return res.status(500).json({ error: ENV ? err : 1, message: "Sensor not updated. #3" });
+        }
     })
 );
 
 // PUT /update sensor remove sensor from miner
 router.put('/unassign/:id',
     [
-        check('id', 'ID is required').escape().not().isEmpty(),
-        check('username', 'username is required').escape().not().isEmpty()
+        check('id', 'ID is required').escape().not().isEmpty().toInt(),
+        check('username', 'username is required').escape().not().isEmpty().toInt()
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { id, username } = matchedData(req);
 
-        const sqlQuery = `
-            UPDATE
-                miners
-            SET
-                sensor_id = null,
-                updated_by = ?
-            WHERE
-                sensorsid = ?;
-        `;
+        try {
+            (await connection).beginTransaction();
 
-        db.execute(sqlQuery, [username, parseInt(id)], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 1 });
-            }
+            const [dbResults] = await (await connection).execute(`
+                UPDATE
+                    miners
+                SET
+                    sensor_id = null,
+                    updated_by = ?
+                WHERE
+                    sensor_id = ?;
+                `, [username, parseInt(id)]);
+
             if (dbResults.affectedRows === 0) {
+                await (await connection).rollback();
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
+            (await connection).execute(
+                'UPDATE sensors SET available = 1 WHERE id = ?',
+                [parseInt(id)]
+            ).then(async ([dbResults]) => {
+                if (dbResults.affectedRows === 0) {
+                    (await connection).rollback();
+                    return res.status(202).json({ message: "Sensor not updated." });
+                }
+            });
+
+            await (await connection).commit();
+
             addLogToQueue(username, "Sensor", `Sensor unassigned successfully by ${username}`);
 
-            res.status(200).json({ message: "Sensor unassigned successfully." })
-        })
+            res.status(200).json({ message: "Sensor unassigned successfully." });
+        } catch (err) {
+            await (await connection).rollback();
+            console.error('Transaction Error:', err);
+            return res.status(500).json({ error: ENV ? err : 1 });
+        }
     })
 );
 
