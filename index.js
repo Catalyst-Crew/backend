@@ -47,10 +47,6 @@ const isDev = process.env.IS_DEV === "true";
 if (!isDev) {
     db.getConnection((err) => {
         if (err) throw err;
-        db.query("SET time_zone = '+02:00';", (err) => {
-            if (err) throw err;
-            console.log("Database Connected");
-        })
         redisDb.connect()
     })
 }
