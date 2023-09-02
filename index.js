@@ -64,7 +64,7 @@ app.use("/dashboard", dasboard);
 app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
 app.all("/", (_, res) => {
-    res.send("OK");
+    res.send("OK v0.0.2");
 });
 
 //Error handler
