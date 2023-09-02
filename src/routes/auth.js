@@ -119,11 +119,11 @@ router.post("/",
                     return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
                 }
 
-                if (dbResults[0].access_id === 1_000_002) {
+                if (dbResults[0].access_id === 1_000_001) {
                     return res.status(401).json({ message: "User is disabled." })
                 }
 
-                if (dbResults[0].access_id === 1_000_003) {
+                if (dbResults[0].access_id === 1_000_002) {
                     return res.status(401).json({ message: "User not found." })
                 }
 

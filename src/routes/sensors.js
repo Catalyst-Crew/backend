@@ -87,14 +87,16 @@ router.get('/all',
 );
 
 // POST /create new sensor
-router.post('/create',
+router.post('/',
     [
-        check('userId', 'UserId is required').escape().not().isEmpty(),
-        check('deviceId', 'Can be null').escape(),
+        check('user_id', 'UserId is required').escape().not().isEmpty().toInt(),
+        check('device_id', 'Can be null').escape(),
+        check('status', 'This field is required').escape().notEmpty().isNumeric().toInt(),
+        check('available', 'This field is required').escape().notEmpty().isNumeric().toInt(),
     ],
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
-        const { deviceId, userId } = req.body
+        const { device_id, user_id, available, status } = matchedData(req)
 
         const sqlQuery = `
             INSERT INTO
@@ -102,10 +104,12 @@ router.post('/create',
                     status,
                     device_id,
                     updated_by,
-                    created_by
+                    created_by,
+                    available
                 )
                 VALUES
                 (
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -114,10 +118,11 @@ router.post('/create',
             ;
 
         const sqlParams = [
-            deviceId ? 1 : 0,
-            deviceId ? deviceId : null,
-            userId,
-            userId
+            device_id ? status : 0,
+            device_id ? device_id : null,
+            user_id,
+            user_id,
+            device_id ? available : 0
         ];
 
         db.execute(sqlQuery, sqlParams, (err, dbResults) => {
@@ -129,7 +134,7 @@ router.post('/create',
                 return res.status(202).json({ message: "Sensor not created." });
             }
 
-            addLogToQueue(userId, "Sensor", `Sensor created successfully by ${userId} with id ${dbResults.insertId} and deviceid ${deviceId}`);
+            addLogToQueue(user_id, "Sensor", `Sensor created successfully with id ${dbResults.insertId} and deviceid ${device_id}`);
 
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
         })
@@ -274,4 +279,4 @@ router.put('/unassign/:id',
     })
 );
 
-module.exports = router
+module.exports = router;
