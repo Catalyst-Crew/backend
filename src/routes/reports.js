@@ -25,6 +25,13 @@ router.use(expressAsyncHandler(async (req, res, next) => {
 ))
 
 router.get("/", generateMeasurments)
+router.get("/", generateLogs)
+router.get("/", generateReport)
+router.get("/", generateReportSettings)
+router.get("/", generateReportforReport)
+router.get("/", generateSensorsTable)
+router.get("/", generateAreas)
+router.get("/", generateUsersReport)
 
 function generateMeasurments() {
   const currentDate = new Date("2023-08-14T08:15:52.000Z");
