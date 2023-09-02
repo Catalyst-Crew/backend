@@ -105,6 +105,9 @@ io.on('connection', (socket) => {
     centralEmitter.on(serverEvents.ACCESS_POINT_FULL, (data) => {
         socket.emit(serverEvents.ACCESS_POINT_FULL, data);
     });
+    centralEmitter.on(serverEvents.NEW_MEASUREMENT, (data) => {
+        socket.emit(serverEvents.NEW_MEASUREMENT, data);
+    });
 
     socket.on('disconnect', () => {
         console.log('user disconnected: ', socket.id);
