@@ -87,7 +87,7 @@ route.get('/',
                     return res.status(200).json({ message: "Users found", data: dbResults });
                 }
 
-                res.status(404).json({ message: "No users found" });
+                return res.status(404).json({ message: "No users found" });
             }
         )
     })

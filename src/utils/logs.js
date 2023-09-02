@@ -48,4 +48,8 @@ function addReportToQueue(id = 999_999, file_name) {
     report.add('report', { id, file_name });
 }
 
+//Add do retry queue
+
+//Add to error queue (generate notification)
+
 module.exports = { addLogToQueue, addReportToQueue };
