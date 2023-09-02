@@ -36,7 +36,7 @@ app.use([
     express.json(),
     cors({
         origin: '*',
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     })
 ]);
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
@@ -44,12 +44,12 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
-if (!isDev) {
+//if (!isDev) {
     db.getConnection((err) => {
         if (err) throw err;
         redisDb.connect()
     })
-}
+//}
 
 //Routes here
 app.use("/auth", auth);
