@@ -1,10 +1,12 @@
 const mysql = require("mysql2");
 const crypto = require("crypto");
+const mysqlP = require('mysql2/promise');
 const { createClient } = require("redis");
 
 
 //Create database connection
 const db = mysql.createPool(process.env.DB_URL);
+const connection = mysqlP.createConnection(process.env.DB_URL);
 
 const CONNECTION = {
     host: process.env.REDIS_HOST,
@@ -43,4 +45,9 @@ const getTimestamp = () => {
     return new Date(date.getTime() + offset);
 }
 
-module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb };
+db.query("SET time_zone = '+02:00';", (err) => {
+    if (err) throw err;
+    console.log("Database Connected");
+})
+
+module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb, connection };

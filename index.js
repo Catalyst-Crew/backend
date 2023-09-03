@@ -10,6 +10,7 @@ const { fork } = require('child_process');
 const { addLogToQueue } = require("./src/utils/logs");
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
+const { centralEmitter, serverEvents } = require("./src/utils/events");
 
 //Routes
 const logs = require("./src/routes/log");
@@ -21,7 +22,6 @@ const sensors = require("./src/routes/sensors");
 const reports = require("./src/routes/reports");
 const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
-const centralEmitter = require("./src/utils/events");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
 
@@ -36,7 +36,7 @@ app.use([
     express.json(),
     cors({
         origin: '*',
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     })
 ]);
 app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
@@ -44,16 +44,12 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
-if (!isDev) {
+//if (!isDev) {
     db.getConnection((err) => {
         if (err) throw err;
-        db.query("SET time_zone = '+02:00';", (err) => {
-            if (err) throw err;
-            console.log("Database Connected");
-        })
         redisDb.connect()
     })
-}
+//}
 
 //Routes here
 app.use("/auth", auth);
@@ -68,7 +64,7 @@ app.use("/dashboard", dasboard);
 app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
 app.all("/", (_, res) => {
-    res.send("OK");
+    res.send("OK v0.0.2");
 });
 
 //Error handler
@@ -96,31 +92,25 @@ trycatch(() => (server.listen(PORT, () => {
 });
 
 io.on('connection', (socket) => {
+    console.log("New user: ", socket.id)
 
-    centralEmitter.on('miner_update', () => {
-        socket.broadcast.emit('miner_update', 'miner update');
+    centralEmitter.on(serverEvents.NEW_ALERT, (data) => {
+        socket.emit(serverEvents.NEW_ALERT, data);
     });
 
-    centralEmitter.on('new_alert', (data) => {
-        socket.broadcast.emit('new_alert', data);
+    centralEmitter.on(serverEvents.ACCESS_POINT, (data) => {
+        socket.emit(serverEvents.ACCESS_POINT, data);
     });
 
-
-    socket.broadcast.emit('sensor_update', 'sensor update');
-    socket.broadcast.emit('area_update', 'area update');
-    socket.broadcast.emit('access_point_update', 'access point update');
-    console.log('a user connected');
-    socket.broadcast.emit('message', 'new_message');
+    centralEmitter.on(serverEvents.ACCESS_POINT_FULL, (data) => {
+        socket.emit(serverEvents.ACCESS_POINT_FULL, data);
+    });
+    centralEmitter.on(serverEvents.NEW_MEASUREMENT, (data) => {
+        socket.emit(serverEvents.NEW_MEASUREMENT, data);
+    });
 
     socket.on('disconnect', () => {
-        console.log('user disconnected');
-    });
-
-    socket.on('message', (msg) => {
-        console.log('message: ' + msg);
-
-        socket.broadcast.emit('message', msg);
-
+        console.log('user disconnected: ', socket.id);
     });
 });
 

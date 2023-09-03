@@ -88,7 +88,7 @@ router.post(
 
                     addLogToQueue(id, "Logs", `Downloaded ${filteredLogs.length} logs on ${getTimestamp()}`);
 
-                    addReportToQueue(id, "Logs", logFileName)
+                    addReportToQueue(id, logFileName)
 
                 }));
 

@@ -17,17 +17,16 @@ new Worker('logger',
     connection: CONNECTION
 });
 new Worker('logger',
-    async job => {
+    async (job) => {
         db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
             [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
     }, {
     connection: CONNECTION
 });
 new Worker('report',
-    async job => {
-        console.log("Report saved ", job.data.generatee_id, job.data.file_name)
-        // db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
-        //     [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
+    async (job) => {
+        db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
+            [job.data.id, job.data.file_name])
     }, {
     connection: CONNECTION
 });
@@ -45,9 +44,12 @@ function addLogToQueue(generatee_id, generatee_name, massage) {
     myQueue.add('log', { generatee_id, generatee_name, massage });
 }
 
-function addReportToQueue(generatee_id, generatee_name, file_name) {
-    report.add('report', { generatee_id, generatee_name, file_name });
+function addReportToQueue(id = 999_999, file_name) {
+    report.add('report', { id, file_name });
 }
 
+//Add do retry queue
+
+//Add to error queue (generate notification)
 
 module.exports = { addLogToQueue, addReportToQueue };

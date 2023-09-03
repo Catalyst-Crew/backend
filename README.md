@@ -20,3 +20,10 @@ Then open you code editor then start working...
 ## Packages
 * [Express](https://expressjs.com/en/4x/api.html#req)
 * [MySql2](https://www.npmjs.com/package/mysql2)
+
+## Todo
+- [ ] Retry queue
+- [ ] Error queue (generate notification)
+- [ ] Generate reports
+- [ ] Geo fence alerts
+- [ ] Announcements

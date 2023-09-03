@@ -6,6 +6,7 @@ const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { addLogToQueue } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
+const { centralEmitter, serverEvents } = require('../utils/events');
 
 const ENV = process.env.IS_DEV === "true";
 
@@ -57,8 +58,8 @@ router.get('/',
 
 router.put('/:id',
     [
-        check("id", "access_points id is required").escape().notEmpty(),
-        check("status", "Status id is required").escape().notEmpty(),
+        check("id", "access_points id is required").escape().notEmpty().toInt(),
+        check("status", "Status id is required").escape().notEmpty().toInt(),
         check("username", "username is required").escape().notEmpty().isString(),
     ],
     validationErrorMiddleware,
@@ -81,6 +82,8 @@ router.put('/:id',
                 if (dbResults.affectedRows < 1) {
                     return res.status(202).json({ message: "Access Point not changed" })
                 }
+
+                centralEmitter.emit(serverEvents.ACCESS_POINT, { id, status })
 
                 addLogToQueue(id, username, `Access Point ${id} status changed to ${status}`);
 
@@ -133,9 +136,34 @@ router.put('/full/:id',
                     return res.status(202).json({ message: "Access Point not changed" })
                 }
 
-                addLogToQueue(username, "Access-Point", `Access Point ${id} updated successfully by ${username} with area_id ${area_id} and name ${name} and lat ${lat} and longitude ${longitude} and device_id ${deviceId}`);
+                db.execute(`
+                    SELECT
+                        ap.area_id AS area_id,
+                        ap.id AS access_point_id,
+                        a.name AS area_name,
+                        ap.device_id AS device_id,
+                        ap.name AS access_point_name,
+                        ap.id_prefix AS id_prefix,
+                        ap.device_id as device_id,
+                        ap.lat AS access_point_latitude,
+                        ap.longitude AS access_point_longitude
+                    FROM
+                        access_points ap
+                    INNER JOIN
+                        areas a ON ap.area_id = a.id
+                    WHERE ap.id = ?
+                    `, [parseInt(id)], (err, dbResults2) => {
+                    if (err) {
+                        return res.status(405).json({ error: ENV ? err : 1, message: "Access Point updated successfully but failed to forward to other clients", })
+                    }
 
-                res.status(200).json({ message: "Access Point updated successfully" })
+                    centralEmitter.emit(serverEvents.ACCESS_POINT_FULL, dbResults2[0])
+
+                    addLogToQueue(username, "Access-Point", `Access Point ${id} updated successfully by ${username} with area_id ${area_id} and name ${name} and lat ${lat} and longitude ${longitude} and device_id ${deviceId}`);
+
+                    res.status(200).json({ message: "Access Point updated successfully" })
+
+                })
             }
         )
     })
