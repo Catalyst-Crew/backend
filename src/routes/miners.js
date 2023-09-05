@@ -86,9 +86,6 @@ router.post('/create',
             `,
             [name, email, username, userId, shift], (err, dbResults) => {
                 if (err) {
-                    if (ENV) {
-                        console.log(err);
-                    }
                     return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
