@@ -115,4 +115,5 @@ io.on('connection', (socket) => {
 });
 
 // create a child process to run cron jobs
-//fork('./src/utils/cron-child.js');
+fork('./src/utils/cron-child.js');
+fork('./src/utils/generators.js');

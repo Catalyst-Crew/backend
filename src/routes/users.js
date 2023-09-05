@@ -34,7 +34,6 @@ route.put('/:id',
             [parseInt(access), parseInt(areaId), user, parseInt(role), parseInt(id)],
             (err, dbResults) => {
                 if (err) {
-                    console.log(err);
                     return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 

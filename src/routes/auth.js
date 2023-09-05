@@ -53,9 +53,6 @@ router.post("/register",
 
                 expressAsyncHandler(async (err, dbResults) => {
                     if (err) {
-                        if (IS_DEV) {
-                            console.log("Error creating user: ", err)
-                        }
                         return res.status(500).json({ message: "Error creating user." })
                     }
 

@@ -16,6 +16,7 @@ new Worker('logger',
     }, {
     connection: CONNECTION
 });
+
 new Worker('logger',
     async (job) => {
         db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
@@ -23,6 +24,7 @@ new Worker('logger',
     }, {
     connection: CONNECTION
 });
+
 new Worker('report',
     async (job) => {
         db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
@@ -31,14 +33,17 @@ new Worker('report',
     connection: CONNECTION
 });
 
-
 const myQueue = new Queue('logger', {
     connection: CONNECTION
 });
+
 const report = new Queue('report', {
     connection: CONNECTION
 });
 
+const generate = new Queue('generate', {
+    connection: CONNECTION
+});
 
 function addLogToQueue(generatee_id, generatee_name, massage) {
     myQueue.add('log', { generatee_id, generatee_name, massage });
@@ -48,8 +53,16 @@ function addReportToQueue(id = 999_999, file_name) {
     report.add('report', { id, file_name });
 }
 
+function addReportToQueue(id = 999_999, file_name) {
+    report.add('report', { id, file_name });
+}
+
+function addGeneratJob(data) {
+    generate.add(data.report_type, data);
+}
+
 //Add do retry queue
 
 //Add to error queue (generate notification)
 
-module.exports = { addLogToQueue, addReportToQueue };
+module.exports = { addLogToQueue, addReportToQueue, CONNECTION, addGeneratJob };
