@@ -3,16 +3,16 @@ const path = require('path');
 const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
-const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
+
 
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue, addReportToQueue } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
+const { addLogToQueue, addReportToQueue, addGeneratJob } = require('../utils/logs');
 
 const ENV = process.env.IS_DEV === "true";
 
-const router = Router()
+const router = Router();
 
 router.use(expressAsyncHandler(async (req, res, next) => {
   if (!ENV) {
@@ -23,18 +23,9 @@ router.use(expressAsyncHandler(async (req, res, next) => {
     next() //Remove this on production
   }
 }
-))
+));
 
-<<<<<<< HEAD
-router.get("/", generateMeasurments)
-router.get("/", generateLogs)
-router.get("/", generateReport)
-router.get("/", generateReportSettings)
-router.get("/", generateReportforReport)
-router.get("/", generateSensorsTable)
-router.get("/", generateAreas)
-router.get("/", generateUsersReport)
-=======
+
 router.get("/:file_name",
   check("file_name").exists().withMessage("File name is required."),
   validationErrorMiddleware,
@@ -57,7 +48,7 @@ router.get("/:file_name",
       }
     })
   })
-)
+);
 
 router.get("/",
   expressAsyncHandler(async (_, res) => {
@@ -86,47 +77,55 @@ router.get("/",
       }
     )
   })
-)
+);
 
-router.post("/generate",
+router.post("/:report_type",
   [
     check("user_id").exists().withMessage("User ID is required.").toInt(),
-    check("notifty_user").exists().withMessage("Notify user is required.").isBoolean().withMessage("Notify user must be a boolean.").toBoolean(),
-    check("date_range").isArray().withMessage("Date range must be an array.").isLength({ min: 2, max: 2 }).withMessage("Date range must have 2 values."),
+    check("notify_user").exists().withMessage("Notify user is required.").isBoolean().withMessage("Notify user must be a boolean.").toBoolean(),
+    check("date_range").isArray().withMessage("Date range must be an array."),
     check("report_type").isIn(["measurements", "access_points", 'miners', 'sensors', 'users', 'reports', 'logs'])
       .withMessage("Report type must be either measurements or access_points. If you want to generate a report for all the tables, use the all keyword.")
   ],
   validationErrorMiddleware,
   expressAsyncHandler(async (req, res) => {
-    const { user_id, notifty_user, date_range, report_type } = matchedData(req);
+    const { user_id, notify_user } = matchedData(req);
 
-    const notifty_email = ""
+    let notifty_email = ""
 
-    if (notifty_user) {
-      const dbResults = db.execute(`SELECT email FROM users WHERE id = ?;`, [user_id])
+    if (notify_user) {
+      db.execute(`
+        SELECT email FROM users WHERE id = ?;`,
+        [user_id],
+        (err, dbResults) => {
 
-      dbResults.then(([dbResults, _]) => {
-        if (dbResults.length === 0) {
-          return res.status(404).json({ message: "User not found." });
+          if (err) {
+            return res.status(500).json({ message: "Error getting current user email" })
+          }
+
+          if (dbResults.length === 0) {
+            return res.status(404).json({ message: "User not found." });
+          }
+
+          const { email } = dbResults[0];
+          notifty_email = email;
+
+          addLogToQueue(user_id, "Reports", `Generating report for user ${email}.`)
+
+          addGeneratJob({ ...matchedData(req), notifty_email })
+
+          return res.status(200).json({ message: "Generating report." })
         }
+      )
 
-        const { email } = dbResults[0];
-        notifty_email = email;
-
-        addLogToQueue(user_id, "Reports", `Generating report for user ${email}.`)
-      })
+      return
     }
 
-    const fromDate = new Date(date_range[0]);
-    const toDate = new Date(date_range[1]);
+    addLogToQueue(user_id, "Reports", `Generating report for user ${user_id}.`)
+    return res.status(200).json({ message: "Generating report." })
 
-    //add to queue for generating the report
-
-    //addToGenerateQueue(user_id, notifty_email, fromDate, toDate, report_type)
-
-    res.status(200).json({ message: "Generating report." })
   })
-)
+);
 
 router.post("/upload",
   [
@@ -159,574 +158,6 @@ router.post("/upload",
       res.status(500).json({ error: 'An error occurred while saving the file.' });
     }
   })
-)
->>>>>>> b6575b197faf02369fa928f4fdfe0404ae018c13
+);
 
-function generateMeasurments() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix, sensor_id, access_point_id, created_at, location, other_data 
-      FROM
-        measurements
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        addLogToQueue(999_999, "Cron Job", `Failed to generate logs with error: ${JSON.stringify(err)}`)
-        return
-      }
-
-      const logFileName = `measurement-${Date.now()}.csv`;
-      const filePath = path.join(__dirname, `../docs/${logFileName}`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, logFileName], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", `Failed to generate a new measurements report. Data: ${JSON.stringify(err)}`)
-                return;
-              }
-              addLogToQueue(999_999, "Reports", `New report genetated for measurement with id ${dbResults.insertId}`)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-      return;
-    })
-  )
-};
-
-//function to generate a report for the logs table
-
-function generateLogs() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        log
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old Log records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/log-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new log report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for log with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-
-
-
-
-
-//Generate a report for the reports
-
-function generateReport() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        reports
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old reports records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/log-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new Report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for reports with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-
-
-//Generate a report for users table
-
-function generateUsersReport() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        users
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old user table records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/users-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Users", "Failed to generate a new users report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for users table with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-
-
-//Generate a report for the areas table
-
-function generateAreas() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        areas
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old areas records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/areas-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new areas report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for areas with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-//generate a report for sensors table
-function generateSensorsTable() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        sensors
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old sensors records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/sensors-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new sensors report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for sensors with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-//generate a report for the report
-function generateReportforReport() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        reports
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old report records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/reports-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for report with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-//generate a report for report settings
-function generateReportSettings() {
-  const currentDate = new Date("2023-08-14T08:15:52.000Z");
-
-  db.execute(
-    `
-      SELECT
-        id, id_prefix,
-        sensor_id,
-        access_point_id, 
-        created_at,
-        location, 
-        other_data 
-      FROM
-        settings
-      WHERE
-        DATE(created_at) = DATE(?)
-      ;
-    `,
-    [currentDate], expressAsyncHandler(async (err, data) => {
-      if (err) {
-        console.log(`$ Error while fetching old report settings records`);
-        console.error(err);
-        /*addLogToQueue(999_999,
-         "Cron Job",
-         "Failed to generate logs with error:
-         "+ JSON.stringify({ err }))*/
-        return
-      }
-
-      const filePath = path.join(__dirname, `../docs/settings-${Date.now()}.csv`);
-
-      const csvWriter = createObjectCsvWriter({
-        path: filePath,
-        header: [
-          { id: 'id', title: 'ID' },
-          { id: 'id_prefix', title: 'ID prefix' },
-          { id: 'sensor_id', title: 'Senser ID' },
-          { id: 'access_point_id', title: 'AccessPoint ID' },
-          { id: 'created_at', title: 'Created_At' },
-          { id: 'location', title: 'Location' },
-          { id: 'other_data', title: 'Other Data' },
-        ],
-        recordDelimiter: '\r\n',
-      });
-
-      csvWriter.writeRecords(data).then(
-        () => {
-          db.execute(`
-            INSERT INTO reports
-              (user_id, file_name) 
-            VALUES 
-              (?, ?);
-          `,
-            [999_999, filePath], (err, dbResults) => {
-              if (err) {
-                addLogToQueue(999_999, "Reports", "Failed to generate a new settings report. Data: " + JSON.stringify(err))
-                return;
-              }
-              addLogToQueue(999_999, "Reports", "New report genetated for report settings with id " + dbResults.insertId)
-            }
-          )
-        }
-      ).catch(err => console.error(err));
-
-      return;
-    })
-  )
-};
- 
-
-
-
-
-
-module.exports = router
+module.exports = router;
