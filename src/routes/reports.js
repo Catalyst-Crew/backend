@@ -135,7 +135,7 @@ router.post("/upload",
   ],
   validationErrorMiddleware,
   expressAsyncHandler(async (req, res) => {
-    const { user_id, file_name, file } = matchedData(req);
+    const { user_id, file_name } = matchedData(req);
 
     const newFileName = `${file_name + Date.now()}.csv`;
 

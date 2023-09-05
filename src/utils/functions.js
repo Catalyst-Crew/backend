@@ -138,7 +138,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new log report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new log report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -163,7 +163,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
                                 )
                             }
 
-                            addLogToQueue(999_999, "Reports", "New report genetated for log with id " + dbResults.insertId)
+                            addLogToQueue(999_999, "Reports", `New report genetated for log with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -219,7 +219,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new Report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new Report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -243,7 +243,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", "New report genetated for reports with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for reports with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -302,7 +302,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Generators", "Failed to generate a new users report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Generators", `Failed to generate a new users report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -327,7 +327,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", "New report genetated for users table with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for users table with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -383,7 +383,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new areas report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new areas report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -407,7 +407,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", "New report genetated for areas with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for areas with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -465,7 +465,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
                     `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new sensors report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new sensors report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -489,7 +489,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", "New report genetated for sensors with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for sensors with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -547,7 +547,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new access-points report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new access-points report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -572,7 +572,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", "New report genetated for access-points with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for access-points with id ${dbResults.insertId}`)
                         }
                     )
                 }
@@ -633,7 +633,7 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", "Failed to generate a new miners report. Data: " + JSON.stringify(err))
+                                addLogToQueue(999_999, "Reports", `Failed to generate a new miners report. Data: ${JSON.stringify(err)}`)
                                 return;
                             }
 
@@ -658,7 +658,7 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", "New report genetated for report settings with id " + dbResults.insertId)
+                            addLogToQueue(user_id, "Reports", `New report genetated for report settings with id ${dbResults.insertId}`)
                         }
                     )
                 }

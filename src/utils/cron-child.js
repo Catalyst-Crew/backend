@@ -20,7 +20,7 @@ function getFormattedDate() {
 
 function getDate30DaysFromNow() {
     const today = new Date();
-    today.setDate(today.getDate() + 30);
+    today.setDate(today.getDate() - 30);
     const year = today.getFullYear();
     const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
@@ -69,4 +69,16 @@ cron.schedule('30 3 1 * *', () => {
 //3:45
 cron.schedule('45 3 1 * *', () => {
     generateUsersReport([getFormattedDate(), getDate30DaysFromNow()])
+    console.log("Cron Jobs finished...")
 });
+
+
+//At 05:00 PM, Monday through Saturday
+cron.schedule('0 17 * * 1-6', () => {
+    console.log("Daily report generating...")
+    generateMeasurments([`${getFormattedDate()} 00:00:00`, `${getFormattedDate()} 29:59:59`])
+    console.log("Daily report finished...")
+});
+
+
+console.log("Cron Jobs Active")

@@ -6,8 +6,6 @@ const { check, matchedData } = require('express-validator');
 const { centralEmitter, serverEvents } = require('../utils/events');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router();
 
 router.get('/iot-data',
@@ -20,8 +18,8 @@ router.get('/iot-data',
   , expressAsyncHandler((req, res) => {
     const { Id, Pass, Data } = matchedData(req);
 
-    const aps = [1000000, 1000001, 1000002];
-    const sens = [1000000, 1000001, 1000002];
+    const aps = [1_000_000, 1_000_001, 1_000_002];
+    const sens = [1_000_000, 1_000_001, 1_000_002];
 
     const r1 = Math.floor(Math.random() * aps.length);
     const r2 = Math.floor(Math.random() * sens.length);
