@@ -17,13 +17,6 @@ new Worker('logger',
     connection: CONNECTION
 });
 
-new Worker('logger',
-    async (job) => {
-        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
-            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
-    }, {
-    connection: CONNECTION
-});
 
 new Worker('report',
     async (job) => {
@@ -47,10 +40,6 @@ const generate = new Queue('generate', {
 
 function addLogToQueue(generatee_id, generatee_name, massage) {
     myQueue.add('log', { generatee_id, generatee_name, massage });
-}
-
-function addReportToQueue(id = 999_999, file_name) {
-    report.add('report', { id, file_name });
 }
 
 function addReportToQueue(id = 999_999, file_name) {
