@@ -4,7 +4,7 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const ENV = process.env.IS_DEV === "true";
@@ -103,7 +103,7 @@ router.post('/',
                     return res.status(500).json({ error: ENV ? err : 1, message: "Can not perform that action right now #3" });
                 }
 
-                addLogToQueue(username, "Areas", "Create", `Created area ${name} with id ${dbResults.insertId}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Areas", massage: `Created area ${name} with id ${dbResults.insertId}` })
 
                 return res.status(200).json({ message: "Area created successfully" })
             }
@@ -137,7 +137,7 @@ router.put('/:id',
                     return res.status(203).json({ error: ENV ? err : 1, message: "No area updated #5" });
                 }
 
-                addLogToQueue(username, "Areas", "Update", `Updated area ${name} with id ${id}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Areas", massage: `Updated area ${name} with id ${id}` })
 
                 return res.status(200).json({ message: "Area updated successfully" })
             }
@@ -169,7 +169,7 @@ router.delete('/:id',
                     return res.status(203).json({ error: ENV ? err : 1, message: "No area deleted #7" });
                 }
 
-                addLogToQueue(username, "Areas", "Delete", `Deleted area with id ${id}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Areas", massage: `Deleted area with id ${id}` })
 
                 return res.status(200).json({ message: "Area deleted successfully" })
             }

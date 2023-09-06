@@ -4,13 +4,12 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 const { centralEmitter, serverEvents } = require('../utils/events');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router();
+const ENV = process.env.IS_DEV === "true";
 
 
 router.use(expressAsyncHandler(async (req, res, next) => {
@@ -85,7 +84,7 @@ router.put('/:id',
 
                 centralEmitter.emit(serverEvents.ACCESS_POINT, { id, status })
 
-                addLogToQueue(id, username, `Access Point ${id} status changed to ${status}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: id, generatee_name: username, massage: `Access Point ${id} status changed to ${status}` })
 
                 res.status(200).json({ message: "Access Point updated successfully" })
             }
@@ -159,7 +158,7 @@ router.put('/full/:id',
 
                     centralEmitter.emit(serverEvents.ACCESS_POINT_FULL, dbResults2[0])
 
-                    addLogToQueue(username, "Access-Point", `Access Point ${id} updated successfully by ${username} with area_id ${area_id} and name ${name} and lat ${lat} and longitude ${longitude} and device_id ${deviceId}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Access-Point", massage: `Access Point ${id} updated successfully by ${username} with area_id ${area_id} and name ${name} and lat ${lat} and longitude ${longitude} and device_id ${deviceId}` })
 
                     res.status(200).json({ message: "Access Point updated successfully" })
 
@@ -212,8 +211,7 @@ router.post('/',
                     return res.status(400).json({ message: "Access Point not created" })
                 }
 
-                addLogToQueue(username, "Access-Point", `Access Point created successfully by ${username} with area_id ${area_id} and name ${name} and lat ${latitude} and longitude ${longitude} and device_id ${deviceId}`);
-
+                addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Access-Point", massage: `Access Point created successfully by ${username} with area_id ${area_id} and name ${name} and lat ${latitude} and longitude ${longitude} and device_id ${deviceId}` })
                 return res.status(200).json({ message: "Access Point created successfully" })
             })
         )

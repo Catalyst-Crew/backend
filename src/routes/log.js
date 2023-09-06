@@ -6,21 +6,20 @@ const expressAsyncHandler = require('express-async-handler');
 const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue, addReportToQueue } = require('../utils/logs');
 const { db, getTimestamp } = require('../utils/database');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router()
+const ENV = process.env.IS_DEV === "true";
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
-        verifyToken(req, res, next); //uncomment in production
+        verifyToken(req, res, next);
     }
 
     if (ENV) {
-        next() //Remove this on production
+        next() 
     }
 }
 ))
@@ -86,9 +85,9 @@ router.post(
                         return res.status(500).send({ message: "Can not perform that action right now #1", data: err.message });
                     }
 
-                    addLogToQueue(id, "Logs", `Downloaded ${filteredLogs.length} logs on ${getTimestamp()}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: id, generatee_name: "Logs", massage: `Downloaded ${filteredLogs.length} logs on ${getTimestamp()}` })
 
-                    addReportToQueue(id, logFileName)
+                    addToQueue(queueNames.REPORT, { user_id: id, logFileName })
 
                 }));
 
