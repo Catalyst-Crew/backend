@@ -25,7 +25,6 @@ const dasboard = require("./src/routes/dashboard");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
 
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -44,12 +43,14 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
-//if (!isDev) {
 db.getConnection((err) => {
     if (err) throw err;
     redisDb.connect()
+    db.query("SET time_zone = '+02:00';", (err) => {
+        if (err) throw err;
+        console.log("Database Connected");
+    })
 })
-//}
 
 //Routes here
 app.use("/auth", auth);
