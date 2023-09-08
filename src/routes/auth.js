@@ -124,7 +124,7 @@ router.post("/",
                 //Verify password from db with one from req
                 if (verifyPassword(password, dbResults[0].password)) {
                     //Create JWT Token
-                    const token = newToken(dbResults[0].id);
+                    const token = newToken({ ...dbResults[0], identity: "", password: "" });
 
                     //Add log to queue
                     addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
