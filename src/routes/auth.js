@@ -4,6 +4,7 @@ const expressAsyncHandler = require('express-async-handler');
 
 //Utils
 const sendEmail = require('../utils/email');
+const { getLineFromError } = require('../utils/functions');
 const { addToQueue, queueNames } = require('../utils/logs');
 const { newToken, getRandomCode } = require('../utils/tokens');
 const { db, getNewPassword, redisDb } = require('../utils/database');
@@ -109,30 +110,37 @@ router.post("/",
                     })
                 }
 
-                if (!dbResults) {
-                    return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
+                try {
+                    if (!dbResults || dbResults?.length === 0) {
+                        return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
+                    }
+
+                    if (dbResults[0].access_id === 1_000_001) {
+                        return res.status(401).json({ message: "User is disabled." })
+                    }
+
+                    if (dbResults[0].access_id === 1_000_002) {
+                        return res.status(401).json({ message: "User not found." })
+                    }
+
+                    //Verify password from db with one from req
+                    if (verifyPassword(password, dbResults[0].password)) {
+                        //Create JWT Token
+                        const token = newToken({ ...dbResults[0], identity: "", password: "" });
+
+                        //Add log to queue
+                        addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
+
+                        return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
+                    }
+
+                    return res.status(401).json({ message: "Invalid email or password." })
+
+                } catch (err) {
+                    const at = getLineFromError(err)
+                    addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server | Auth", massage: `${err?.message || " "} ${at}` })
+                    return res.status(500).json({ message: "Server error please try again later" })
                 }
-
-                if (dbResults[0].access_id === 1_000_001) {
-                    return res.status(401).json({ message: "User is disabled." })
-                }
-
-                if (dbResults[0].access_id === 1_000_002) {
-                    return res.status(401).json({ message: "User not found." })
-                }
-
-                //Verify password from db with one from req
-                if (verifyPassword(password, dbResults[0].password)) {
-                    //Create JWT Token
-                    const token = newToken({ ...dbResults[0], identity: "", password: "" });
-
-                    //Add log to queue
-                    addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
-
-                    return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
-                }
-
-                res.status(401).json({ message: "Invalid email or password." })
             })
         )
     })
