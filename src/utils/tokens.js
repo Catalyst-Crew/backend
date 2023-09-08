@@ -13,6 +13,7 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: "Unauthorized to perform that action" });
     }
+    req.userData = verifiedToken
     next();
   });
 };
