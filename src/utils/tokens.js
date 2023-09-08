@@ -11,7 +11,7 @@ const verifyToken = (req, res, next) => {
   const token = req.headers["x-access-token"];
   verify(token, tokenKey, (err, verifiedToken) => {
     if (err) {
-      return res.status(401).send({ message: "Unauthorized to perform that action" });
+      return res.status(401).send({ message: "Unauthorized to perform that action yow will be logged out." });
     }
     req.userData = verifiedToken
     next();
