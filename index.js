@@ -38,7 +38,7 @@ app.use([
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     })
 ]);
-app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
+app.use(logger("short"))
 
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
