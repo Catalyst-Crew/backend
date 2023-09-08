@@ -1,11 +1,11 @@
-
 const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 //Utils
 const sendEmail = require('../utils/email');
-const { addLogToQueue } = require('../utils/logs');
+const { getLineFromError } = require('../utils/functions');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { newToken, getRandomCode } = require('../utils/tokens');
 const { db, getNewPassword, redisDb } = require('../utils/database');
 const { hashPassword, verifyPassword } = require('../utils/password');
@@ -13,7 +13,6 @@ const { validationErrorMiddleware } = require('../utils/middlewares');
 
 //Inti
 const router = Router();
-
 const IS_DEV = process.env.IS_DEV === "true";
 
 router.post("/register",
@@ -62,10 +61,9 @@ router.post("/register",
                         User ID: use-${dbResults.insertId}<br/>Area ID: are-${areaId}`, "new-users"
                     )
 
-                    addLogToQueue(dbResults.insertId, user, `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: dbResults.insertId, generatee_name: user, massage: `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.` })
 
                     return res.status(200).json({ message: "User registerd successfully.", data: IS_DEV ? dbResults : {} })
-
                 })
             )
         })
@@ -112,36 +110,44 @@ router.post("/",
                     })
                 }
 
-                if (!dbResults) {
-                    return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
+                try {
+                    if (!dbResults || dbResults?.length === 0) {
+                        return res.status(404).json({ message: "User not found or incorrect password.", data: { email } })
+                    }
+
+                    if (dbResults[0].access_id === 1_000_001) {
+                        return res.status(401).json({ message: "User is disabled." })
+                    }
+
+                    if (dbResults[0].access_id === 1_000_002) {
+                        return res.status(401).json({ message: "User not found." })
+                    }
+
+                    //Verify password from db with one from req
+                    if (verifyPassword(password, dbResults[0].password)) {
+                        //Create JWT Token
+                        const token = newToken({ ...dbResults[0], identity: "", password: "" });
+
+                        //Add log to queue
+                        addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
+
+                        return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
+                    }
+
+                    return res.status(401).json({ message: "Invalid email or password." })
+
+                } catch (err) {
+                    const at = getLineFromError(err)
+                    addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server | Auth", massage: `${err?.message || " "} ${at}` })
+                    return res.status(500).json({ message: "Server error please try again later" })
                 }
-
-                if (dbResults[0].access_id === 1_000_001) {
-                    return res.status(401).json({ message: "User is disabled." })
-                }
-
-                if (dbResults[0].access_id === 1_000_002) {
-                    return res.status(401).json({ message: "User not found." })
-                }
-
-                //Verify password from db with one from req
-                if (verifyPassword(password, dbResults[0].password)) {
-                    //Create JWT Token
-                    const token = newToken(dbResults[0].id);
-
-                    //Add log to queue
-                    addLogToQueue(dbResults[0].id, dbResults[0].name, `User loggedin successfully ${dbResults[0].email}`);
-
-                    return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
-                }
-
-                res.status(401).json({ message: "Invalid email or password." })
             })
         )
     })
 );
 
-router.get("/forgot-password/:email", check("email").escape().isEmail().withMessage("Invalid email"),
+router.get("/forgot-password/:email",
+    check("email").escape().isEmail().withMessage("Invalid email"),
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { email } = matchedData(req);
@@ -217,7 +223,9 @@ router.patch("/forgot-password/:email/:code",
                 }
 
                 redisDb.del(email)
-                addLogToQueue(email, "User", "Password reset successfully")
+
+                addToQueue(queueNames.LOGGER, { generatee_id: email, generatee_name: "Authentication", massage: "Password reset successfull" })
+
                 return dbResults.changedRows === 1
                     ?
                     res.status(200).json({ message: "Password reset successfully." })

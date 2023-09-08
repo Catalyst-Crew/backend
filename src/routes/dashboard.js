@@ -5,10 +5,8 @@ const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
-
 const router = Router();
+const ENV = process.env.IS_DEV === "true";
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {

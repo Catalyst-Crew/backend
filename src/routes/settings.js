@@ -2,14 +2,13 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
+const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
-const { db, getTimestamp } = require('../utils/database');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router();
+const ENV = process.env.IS_DEV === "true";
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
@@ -45,7 +44,8 @@ router.get('/:user_id',
                 user_id=?
             LIMIT 1;
             `,
-            [parseInt(user_id)], (err, dbResults) => {
+            [parseInt(user_id)],
+            (err, dbResults) => {
                 if (err) {
                     return res.status(500).json({ error: ENV ? err : 1 });
                 }
@@ -66,8 +66,7 @@ router.put('/:user_id',
         check("user_id", "user_id is required").escape().notEmpty().isString(),
         check("app_notifications", "appNotification is required").escape().notEmpty().isNumeric(),
         check("email_notifications", "emailNotification is required").escape().notEmpty().isNumeric(),
-        check("dark_mode", "darkMode is required").escape().notEmpty().isNumeric(),
-
+        check("dark_mode", "darkMode is required").escape().notEmpty().isNumeric()
     ],
     validationErrorMiddleware,
     expressAsyncHandler((req, res) => {
@@ -94,11 +93,10 @@ router.put('/:user_id',
                     return res.status(202).json({ message: "Settings not changed" })
                 }
 
-                addLogToQueue(user_id, "Settings", `Settings updated successfully by ${user_id} at ${getTimestamp()} with appNotifications ${app_notifications} and emailNotifications ${email_notifications} and darkMode ${dark_mode}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Settings", massage: `Settings updated successfully by ${user_id} with appNotifications ${app_notifications} and emailNotifications ${email_notifications} and darkMode ${dark_mode}` })
 
                 res.status(200).json({ message: "Settings updated successfully" })
-            }
-            )
+            })
         )
     })
 );

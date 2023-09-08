@@ -3,13 +3,12 @@ const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 const { verifyToken } = require('../utils/tokens');
-const { addLogToQueue } = require('../utils/logs');
 const { db, connection } = require('../utils/database');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router();
+const ENV = process.env.IS_DEV === "true";
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
@@ -19,7 +18,7 @@ router.use(expressAsyncHandler(async (req, res, next) => {
     if (ENV) {
         next() //Remove this on production
     }
-}))
+}));
 
 //get all employees
 router.get('/',
@@ -60,7 +59,7 @@ router.get('/',
             res.status(200).json({ message: "Employees fetched successfully.", data: dbResults })
         })
     })
-)
+);
 
 // POST /create new employe
 router.post('/create',
@@ -93,13 +92,13 @@ router.post('/create',
                     return res.status(500).json({ message: "Failed creating new employee, please try again.", error: ENV ? err : 1 });
                 }
 
-                addLogToQueue(dbResults.insertId, username, `Employee created successfully by ${username} with id ${dbResults.insertId} and name ${name} and shift ${shift} and email ${email}`);
+                addToQueue(queueNames.LOGGER, { generatee_id: userId, generatee_name: "Miners", massage: `Employee created successfully by ${username} with id ${dbResults.insertId} and name ${name} and shift ${shift} and email ${email}` })
 
                 res.status(200).json({ message: "Employee added successfully.", data: {} })
             }
         )
     })
-)
+);
 
 // update employee and add node
 router.put("/:id",
@@ -125,47 +124,49 @@ router.put("/:id",
                 sensor_id = ? 
             WHERE
                 id = ?;
-        `, [updated_by, supervisor_id, shift, sensor_id, id], (err, dbResults) => {
-            if (err) {
-                return res.status(500).json({ error: ENV ? err : 1 });
-            }
-
-            if (sensorsid === NaN || sensorsid === null || sensorsid === undefined || sensorsid === 0 || !sensorsid) {
-                if (dbResults.affectedRows === 0) {
-                    return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
+        `,
+            [updated_by, supervisor_id, shift, sensor_id, id],
+            (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ error: ENV ? err : 1 });
                 }
 
-                addLogToQueue(id, updated_by, `Updated the employee with the id ${id} with shift ${shift}, and supervisor id ${supervisor_id}`)
-                res.status(200).json({ message: "Employee updated successfully.", data: {} })
-                return;
-            }
-
-            //set node to unavailable
-            db.execute(`
-                UPDATE
-                    sensors
-                SET
-                    available = 0
-                WHERE
-                    id = ?;
-                `,
-                [sensorsid], (err, dbResults) => {
-                    if (err) {
-                        return res.status(500).json({ error: ENV ? err : 1 });
-                    }
-
+                if (sensorsid === NaN || sensorsid === null || sensorsid === undefined || sensorsid === 0 || !sensorsid) {
                     if (dbResults.affectedRows === 0) {
                         return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
                     }
 
-                    addLogToQueue(id, updated_by, `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: updated_by, generatee_name: "Miners", massage: `Updated the employee with the id ${id} with shift ${shift}, and supervisor id ${supervisor_id}` })
 
-                    res.status(200).json({ message: "Employee updated successfully.", data: {} })
+                    return res.status(200).json({ message: "Employee updated successfully.", data: {} })
                 }
-            )
-        })
+
+                //set node to unavailable
+                db.execute(`
+            UPDATE
+            sensors
+            SET
+            available = 0
+                WHERE
+                id = ?;
+                `,
+                    [sensorsid], (err, dbResults) => {
+                        if (err) {
+                            return res.status(500).json({ error: ENV ? err : 1 });
+                        }
+
+                        if (dbResults.affectedRows === 0) {
+                            return res.status(500).json({ message: "Failed updating employee, please try again.", error: ENV ? err : 1 });
+                        }
+
+                        addToQueue(queueNames.LOGGER, { generatee_id: updated_by, generatee_name: "Miners", massage: `Employee updated successfully by ${updated_by}  with id ${id} and shift ${shift} and supervisor_id ${supervisor_id} and sensorsid ${sensorsid}` })
+
+                        res.status(200).json({ message: "Employee updated successfully.", data: {} })
+                    }
+                )
+            })
     })
-)
+);
 
 //delete employee
 router.delete("/deactivate/:id/:userId",
@@ -214,7 +215,7 @@ router.delete("/deactivate/:id/:userId",
 
             (await connection).commit();
 
-            addLogToQueue(userId, "Miner", `Employee deactivated successfully by ${userId}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: userId, generatee_name: "Miners", massage: `Employee deactivated successfully by ${userId}` })
 
             return res.status(200).json({ message: 'Employee deactivated successfully.', data: {} });
         } catch (error) {
@@ -223,7 +224,7 @@ router.delete("/deactivate/:id/:userId",
             return res.status(500).json({ error: error.message });
         }
     })
-)
+);
 
 //delete employee
 router.delete("/delete/:id/:userId",
@@ -272,7 +273,7 @@ router.delete("/delete/:id/:userId",
 
             (await connection).commit();
 
-            addLogToQueue(userId, "Miner", `Employee Deleted successfully by ${userId}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: userId, generatee_name: "Miners", massage: `Employee Deleted successfully by ${userId}` })
 
             return res.status(200).json({ message: 'Employee deleted successfully.', data: {} });
         } catch (error) {
@@ -281,6 +282,6 @@ router.delete("/delete/:id/:userId",
             return res.status(500).json({ error: error.message });
         }
     })
-)
+);
 
 module.exports = router;
