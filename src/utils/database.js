@@ -45,9 +45,4 @@ const getTimestamp = () => {
     return new Date(date.getTime() + offset);
 }
 
-db.query("SET time_zone = '+02:00';", (err) => {
-    if (err) throw err;
-    console.log("Database Connected");
-})
-
 module.exports = { db, getNewID, getNewPassword, getTimestamp, redisDb, connection };

@@ -1,11 +1,10 @@
-
 const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 //Utils
 const sendEmail = require('../utils/email');
-const { addLogToQueue } = require('../utils/logs');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { newToken, getRandomCode } = require('../utils/tokens');
 const { db, getNewPassword, redisDb } = require('../utils/database');
 const { hashPassword, verifyPassword } = require('../utils/password');
@@ -13,7 +12,6 @@ const { validationErrorMiddleware } = require('../utils/middlewares');
 
 //Inti
 const router = Router();
-
 const IS_DEV = process.env.IS_DEV === "true";
 
 router.post("/register",
@@ -62,10 +60,9 @@ router.post("/register",
                         User ID: use-${dbResults.insertId}<br/>Area ID: are-${areaId}`, "new-users"
                     )
 
-                    addLogToQueue(dbResults.insertId, user, `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: dbResults.insertId, generatee_name: user, massage: `User registered successfully by ${user} with email ${email} and role rol-${role} and access acc-${access} and areaId are-${areaId}.` })
 
                     return res.status(200).json({ message: "User registerd successfully.", data: IS_DEV ? dbResults : {} })
-
                 })
             )
         })
@@ -130,7 +127,7 @@ router.post("/",
                     const token = newToken(dbResults[0].id);
 
                     //Add log to queue
-                    addLogToQueue(dbResults[0].id, dbResults[0].name, `User loggedin successfully ${dbResults[0].email}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
 
                     return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
                 }
@@ -141,7 +138,8 @@ router.post("/",
     })
 );
 
-router.get("/forgot-password/:email", check("email").escape().isEmail().withMessage("Invalid email"),
+router.get("/forgot-password/:email",
+    check("email").escape().isEmail().withMessage("Invalid email"),
     validationErrorMiddleware,
     expressAsyncHandler(async (req, res) => {
         const { email } = matchedData(req);
@@ -217,7 +215,9 @@ router.patch("/forgot-password/:email/:code",
                 }
 
                 redisDb.del(email)
-                addLogToQueue(email, "User", "Password reset successfully")
+
+                addToQueue(queueNames.LOGGER, { generatee_id: email, generatee_name: "Authentication", massage: "Password reset successfull" })
+
                 return dbResults.changedRows === 1
                     ?
                     res.status(200).json({ message: "Password reset successfully." })

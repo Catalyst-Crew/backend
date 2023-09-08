@@ -1,7 +1,7 @@
 const path = require('path');
 const sendEmail = require('./email');
 const { db } = require('./database');
-const { addLogToQueue } = require('./logs');
+const { addToQueue, queueNames } = require('./logs');
 const expressAsyncHandler = require('express-async-handler');
 const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
 
@@ -28,7 +28,7 @@ function generateMeasurments(date, user_id = 999_999, otherData = { email: "", n
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generator Worker", `Failed to generate logs with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Generator Worker", massage: `Faliled to generate measurements report with error: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -59,7 +59,7 @@ function generateMeasurments(date, user_id = 999_999, otherData = { email: "", n
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new measurements report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new measurements report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -83,7 +83,7 @@ function generateMeasurments(date, user_id = 999_999, otherData = { email: "", n
                                     </div>`
                                 )
                             }
-                            addLogToQueue(999_999, "Reports", `New report genetated for measurement with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for measurement with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -108,7 +108,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generator Worker", `Failed to generate logs with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Generator Worker", massage: `Faliled to generate logs with error: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -138,7 +138,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new log report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new log report. Data: ${JSON.stringify(err)}` });
                                 return;
                             }
 
@@ -163,7 +163,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
                                 )
                             }
 
-                            addLogToQueue(999_999, "Reports", `New report genetated for log with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for logs with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -188,7 +188,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generator Worker", `Failed to generate logs with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Generator Worker", massage: `Faliled to generate logs with error: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -219,7 +219,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new Report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -243,7 +243,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", `New report genetated for reports with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for reports with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -267,7 +267,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generator Worker", `Failed to generate logs with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Generator Worker", massage: `Faliled to generate logs with error: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -302,7 +302,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Generators", `Failed to generate a new users report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new users report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -327,7 +327,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", `New report genetated for users table with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for users with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -352,7 +352,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generate Worker", `Failed to generate areas report with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new areas report. Data: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -383,7 +383,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new areas report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a areas log report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -407,7 +407,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", `New report genetated for areas with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for areas with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -432,7 +432,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generate Worker", `Failed to generate sensors report with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new sensors report. Data: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -465,7 +465,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
                     `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new sensors report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new sensors report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -489,7 +489,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
                                     </div>`
                                 )
                             }
-                            addLogToQueue(user_id, "Reports", `New report genetated for sensors with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for sensors with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -514,7 +514,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generate Worker", `Failed to generate sensors report with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new access-points report. Data: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -547,7 +547,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new access-points report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new access-points report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -572,7 +572,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", `New report genetated for access-points with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for access-points with id ${dbResults.insertId}` })
                         }
                     )
                 }
@@ -597,7 +597,7 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
         [date[0], date[1]],
         expressAsyncHandler(async (err, data) => {
             if (err) {
-                addLogToQueue(999_999, "Generate Worker", `Failed to generate miners report with error: ${JSON.stringify(err)}`)
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new minsers report. Data: ${JSON.stringify(err)}` })
                 return
             }
 
@@ -633,7 +633,7 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
                         `,
                         [user_id, logFileName], (err, dbResults) => {
                             if (err) {
-                                addLogToQueue(999_999, "Reports", `Failed to generate a new miners report. Data: ${JSON.stringify(err)}`)
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new miners report. Data: ${JSON.stringify(err)}` })
                                 return;
                             }
 
@@ -658,7 +658,7 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
                                 )
                             }
 
-                            addLogToQueue(user_id, "Reports", `New report genetated for report settings with id ${dbResults.insertId}`)
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for miners with id ${dbResults.insertId}` })
                         }
                     )
                 }
