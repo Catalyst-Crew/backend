@@ -126,7 +126,7 @@ router.post("/:report_type",
   })
 );
 
-router.post("/upload",
+router.post("/upload/new",
   [
     check("user_id").exists().withMessage("User ID is required.").toInt(),
     check("file_name").exists().withMessage("File name is required.").escape(),
@@ -135,6 +135,8 @@ router.post("/upload",
   validationErrorMiddleware,
   expressAsyncHandler(async (req, res) => {
     const { user_id, file_name } = matchedData(req);
+
+    console.log("Here")
 
     const newFileName = `${file_name + Date.now()}.csv`;
 
