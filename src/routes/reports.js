@@ -8,7 +8,7 @@ const expressAsyncHandler = require('express-async-handler');
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
-const { addLogToQueue, addReportToQueue, addGeneratJob } = require('../utils/logs');
+const { addGeneratJob, addToQueue, queueNames } = require('../utils/logs');
 
 const router = Router();
 const ENV = process.env.IS_DEV === "true";
@@ -108,24 +108,23 @@ router.post("/:report_type",
           const { email } = dbResults[0];
           notifty_email = email;
 
-          addLogToQueue(user_id, "Reports", `Generating report for user ${email}.`)
+          addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Reports", massage: `Generating report for user ${email}.` })
 
           addGeneratJob({ ...matchedData(req), notifty_email })
 
           return res.status(200).json({ message: "Generating report." })
         }
       )
-
       return
     }
 
-    addLogToQueue(user_id, "Reports", `Generating report for user ${user_id}.`)
+    addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Reports", massage:  `Generating report for user ${user_id}.`})
+    
     return res.status(200).json({ message: "Generating report." })
-
   })
 );
 
-router.post("/upload",
+router.post("/upload/new",
   [
     check("user_id").exists().withMessage("User ID is required.").toInt(),
     check("file_name").exists().withMessage("File name is required.").escape(),
@@ -134,6 +133,8 @@ router.post("/upload",
   validationErrorMiddleware,
   expressAsyncHandler(async (req, res) => {
     const { user_id, file_name } = matchedData(req);
+
+    console.log("Here")
 
     const newFileName = `${file_name + Date.now()}.csv`;
 
@@ -146,8 +147,9 @@ router.post("/upload",
 
       fs.writeFileSync(filePath, buffer);
 
-      addLogToQueue(user_id, "Reports", `New report uploaded with name ${file_name}.`)
-      addReportToQueue(user_id, newFileName)
+      addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Reports", massage: `New report uploaded with name ${file_name}.` })
+
+      addToQueue(queueNames.REPORT, { logFileName: newFileName, user_id })
 
       res.status(200).json({ message: 'File saved successfully.', file_path: filePath });
 

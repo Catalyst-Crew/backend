@@ -7,9 +7,9 @@ const trycatch = require("trycatch");
 const { Server } = require("socket.io");
 const { fork } = require('child_process');
 
-const { addLogToQueue } = require("./src/utils/logs");
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
+const { addToQueue, queueNames } = require("./src/utils/logs");
 const { centralEmitter, serverEvents } = require("./src/utils/events");
 
 //Routes
@@ -26,7 +26,6 @@ const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
 const announcements = require("./src/routes/announcements");
 
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -40,10 +39,11 @@ app.use([
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     })
 ]);
-app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
+app.use(logger("short"))
 
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
+
 
 //if (!isDev) {
 db.getConnection((err) => {
@@ -51,6 +51,7 @@ db.getConnection((err) => {
     redisDb.connect()
 })
 //}
+
 
 //Routes here
 app.use("/auth", auth);
@@ -76,7 +77,9 @@ app.use((err, _, res, __) => {
     if (isDev) {
         trycatch(() => console.log(err.message), (err) => console.log(err.message));
     } else {
-        trycatch(() => addLogToQueue(999_999, "Server", `${err.message} ${at}`), (err) => console.log(err.message));
+        trycatch(() =>
+            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
+        );
     }
 });
 
@@ -87,7 +90,7 @@ trycatch(() => (server.listen(PORT, () => {
     app.use((_, res) => {
         if (!isDev) {
             const at = getLineFromError(err)
-            addLogToQueue(999_999, "Server", err.message + " " + at);
+            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
         }
         res.status(500).send({ message: "Something went wrong" });
     });
