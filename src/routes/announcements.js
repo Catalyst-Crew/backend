@@ -27,16 +27,21 @@ router.get("/",
         const dateFilter = getDaysFromNow(5)
 
         db.execute(`
-        SELECT 
-            *
-        FROM 
-            announcements
-        WHERE
-            created_at >= ?;`,
+            SELECT
+                a.name AS name,
+                message AS message,
+                a.created_at AS created_at,
+                s.name AS user_name
+            FROM 
+                announcements a
+            INNER JOIN
+                users s on s.id = a.usersid
+            WHERE
+                a.created_at >= ?;`,
             [dateFilter],
             (err, dbResults) => {
                 if (err) {
-                    return res.status(500).json({ message: "Server error while creating the announcement." })
+                    return res.status(500).json({ message: "Server error while getting the announcements." })
                 }
 
                 return res.json(dbResults)
@@ -78,7 +83,7 @@ router.post("/",
                 }
 
                 if (dbResults.affectedRows) {
-                    return res.json({ message: "New announcement created successfullt." })
+                    return res.json({ message: "New announcement created successfully." })
                 }
 
                 return res.status(400).json({ message: "Something went wrong creating the announcement. Please try again." })
