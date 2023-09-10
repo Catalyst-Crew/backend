@@ -669,6 +669,16 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
     )
 };
 
+function getDaysFromNow(days = 30) {
+    const today = new Date();
+    today.setDate(today.getDate() - days);
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 
 module.exports = {
     generateAccessPoints,
@@ -681,4 +691,5 @@ module.exports = {
     generateSensorsReport,
 
     getLineFromError,
+    getDaysFromNow
 };

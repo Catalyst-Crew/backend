@@ -3,14 +3,12 @@ const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 const { db } = require('../utils/database');
+const centralEmitter = require('../utils/events');
 const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
-const centralEmitter = require('../utils/events');
-
-const ENV = process.env.IS_DEV === "true";
 
 const router = Router();
-
+const ENV = process.env.IS_DEV === "true";
 
 router.use(
     expressAsyncHandler(async (req, res, next) => {
@@ -117,5 +115,6 @@ router.post('/',
         )
     })
 );
+
 
 module.exports = router;

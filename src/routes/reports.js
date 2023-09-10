@@ -10,21 +10,8 @@ const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 const { addGeneratJob, addToQueue, queueNames } = require('../utils/logs');
 
-const ENV = process.env.IS_DEV === "true";
-
 const router = Router();
-
-router.use(expressAsyncHandler(async (req, res, next) => {
-  if (!ENV) {
-    verifyToken(req, res, next); //uncomment in production
-  }
-
-  if (ENV) {
-    next() //Remove this on production
-  }
-}
-));
-
+const ENV = process.env.IS_DEV === "true";
 
 router.get("/:file_name",
   check("file_name").exists().withMessage("File name is required."),
@@ -49,6 +36,17 @@ router.get("/:file_name",
     })
   })
 );
+
+router.use(expressAsyncHandler(async (req, res, next) => {
+  if (!ENV) {
+    verifyToken(req, res, next); //uncomment in production
+  }
+
+  if (ENV) {
+    next() //Remove this on production
+  }
+}
+));
 
 router.get("/",
   expressAsyncHandler(async (_, res) => {
