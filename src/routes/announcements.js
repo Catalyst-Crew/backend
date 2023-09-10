@@ -4,6 +4,7 @@ const expressAsyncHandler = require('express-async-handler');
 
 const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
+const { getDaysFromNow } = require('../utils/functions');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const router = Router();
@@ -21,9 +22,28 @@ router.use(
     })
 );
 
-router.get("/", (req, res, next) => {
+router.get("/",
+    (_req, res) => {
+        const dateFilter = getDaysFromNow(5)
 
-})
+        db.execute(`
+        SELECT 
+            *
+        FROM 
+            announcements
+        WHERE
+            created_at >= ?;`,
+            [dateFilter],
+            (err, dbResults) => {
+                if (err) {
+                    return res.status(500).json({ message: "Server error while creating the announcement." })
+                }
+
+                return res.json(dbResults)
+            }
+        )
+    }
+);
 
 router.post("/",
     (req, res, next) => {
