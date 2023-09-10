@@ -24,6 +24,7 @@ const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
+const announcements = require("./src/routes/announcements");
 
 
 const app = express();
@@ -45,10 +46,10 @@ app.use(logger(process.env.IS_DEV === "true" ? "dev" : "combined"))
 const isDev = process.env.IS_DEV === "true";
 
 //if (!isDev) {
-    db.getConnection((err) => {
-        if (err) throw err;
-        redisDb.connect()
-    })
+db.getConnection((err) => {
+    if (err) throw err;
+    redisDb.connect()
+})
 //}
 
 //Routes here
@@ -63,6 +64,7 @@ app.use("/settings", settings);
 app.use("/dashboard", dasboard);
 app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
+app.use("/announcements", announcements);
 app.all("/", (_, res) => {
     res.send("OK v0.0.2");
 });
