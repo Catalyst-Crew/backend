@@ -30,6 +30,7 @@ router.get('/iot-data',
             ap.name AS access_point_name,
             
             a.id AS area_id,
+            a.name AS area_name,
             
             m.id AS measurement_id,
             m.other_data AS measurement_other_data,
