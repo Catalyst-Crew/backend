@@ -83,18 +83,23 @@ app.use((err, _, res, __) => {
     }
 });
 
-//Start the server
-trycatch(() => (server.listen(PORT, () => {
-    console.log(`Server listening on port: ${PORT}`);
-})), (err) => {
-    app.use((_, res) => {
-        if (!isDev) {
-            const at = getLineFromError(err)
-            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
-        }
-        res.status(500).send({ message: "Something went wrong" });
+server.listen(PORT, () => {
+    console.log(`Server listening on port: ${PORT}`)
+}).on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+        console.error('Address in use, retrying...');
+        setTimeout(() => {
+            server.close();
+            server.listen(PORT);
+        }, 1000);
+    }
+
+    server.listen(PORT, () => {
+        console.log(`Server listening on port: ${PORT}`)
     });
-});
+})
+
+
 
 io.on('connection', (socket) => {
     console.log("New user: ", socket.id)

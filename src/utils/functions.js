@@ -77,7 +77,7 @@ function generateMeasurments(date, user_id = 999_999, otherData = { email: "", n
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -156,7 +156,7 @@ function generateLogs(date, user_id = 999_999, otherData = { email: "", notify: 
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -237,7 +237,7 @@ function generateReport(date, user_id = 999_999, otherData = { email: "", notify
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -320,7 +320,7 @@ function generateUsersReport(date, user_id = 999_999, otherData = { email: "", n
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -401,7 +401,7 @@ function generateAreas(date, user_id = 999_999, otherData = { email: "", notify:
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -483,7 +483,7 @@ function generateSensorsReport(date, user_id = 999_999, otherData = { email: "",
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -565,7 +565,7 @@ function generateAccessPoints(date, user_id = 999_999, otherData = { email: "", 
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
@@ -651,7 +651,86 @@ function generateMiners(date, user_id = 999_999, otherData = { email: "", notify
                                             </tr>
                                             <tr>
                                                 <td>Link: </td>
-                                                <td>https://ccb-c931.onrender.com/reports/${logFileName}</td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
+                                            </tr>
+                                        </table>
+                                    </div>`
+                                )
+                            }
+
+                            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `New report genetated for miners with id ${dbResults.insertId}` })
+                        }
+                    )
+                }
+            ).catch(err => console.error(err));
+
+            return;
+        })
+    )
+};
+//generate a report for report settings
+function generateAlerts(date, user_id = 999_999, otherData = { email: "", notify: false }) {
+    db.execute(
+        `
+        SELECT 
+            id, id_prefix, sensor_id, name, status, created_at 
+        FROM 
+            sensor_alerts;
+        WHERE
+          created_at >= ? AND created_at <= ?;
+      `,
+        [date[0], date[1]],
+        expressAsyncHandler(async (err, data) => {
+            if (err) {
+                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new minsers report. Data: ${JSON.stringify(err)}` })
+                return
+            }
+
+            const logFileName = `alerts-${Date.now()}.csv`;
+            const filePath = path.join(__dirname, `../docs/${logFileName}`);
+
+            const csvWriter = createObjectCsvWriter({
+                path: filePath,
+                header: [
+                    { id: 'id', title: 'ID' },
+                    { id: 'id_prefix', title: 'ID prefix' },
+                    { id: 'sensor_id', title: 'Senser ID' },
+                    { id: 'name', title: 'Full Name' },
+                    { id: 'created_at', title: 'Created_At' },
+                    { id: 'status', title: 'Status' }
+                ],
+                recordDelimiter: '\r\n',
+            });
+
+            csvWriter.writeRecords(data).then(
+                () => {
+                    db.execute(`
+                        INSERT INTO reports
+                            (user_id, file_name) 
+                        VALUES 
+                            (?, ?);
+                        `,
+                        [user_id, logFileName], (err, dbResults) => {
+                            if (err) {
+                                addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Reports", massage: `Failed to generate a new miners report. Data: ${JSON.stringify(err)}` })
+                                return;
+                            }
+
+                            if (otherData.email && otherData.notify) {
+                                sendEmail(otherData.email, "Your Requested Report",
+                                    `<dFiv>
+                                        <table>
+                                            <tr>
+                                                <td>File name: </td>
+                                                <td>${logFileName}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Date: </td>
+                                                <td>${timeStamp.toDateString()}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Link: </td>
+                                                <td>${process.env.API_HOST}/reports/${logFileName}</td>
                                             </tr>
                                         </table>
                                     </div>`
