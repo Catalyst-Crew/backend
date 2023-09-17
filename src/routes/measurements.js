@@ -19,6 +19,9 @@ router.get('/iot-data',
     (req, res) => {
       const { Id, Pass, Data } = matchedData(req);
 
+      console.log(req.params)
+      console.log(req.query)
+
       const data = JSON.parse(Data);
 
       if (data[0]) {
