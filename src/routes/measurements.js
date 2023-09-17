@@ -9,22 +9,22 @@ const { validationErrorMiddleware } = require('../utils/middlewares');
 const router = Router();
 
 router.get('/iot-data',
-  [
-    check("Pass").escape(),
-    check("Id").escape(),
-    check("Data").escape()
-  ],
+  check("Data").escape().trim(),
   validationErrorMiddleware,
   expressAsyncHandler(
     (req, res) => {
-      const { Id, Pass, Data } = matchedData(req);
+      const { Data } = matchedData(req);
 
-      console.log(req.params)
-      console.log(req.query)
+      const dataArry = Data.split('*')
+      const devices = ["1000CF57BC34", "1000CFF62B02"]
 
-      const data = JSON.parse(Data);
+      let Id = devices[0]
 
-      if (data[0]) {
+      if (dataArry[5] === '1') {
+        Id = devices[1]
+      }
+
+      if (dataArry[5] === '1' || dataArry[4] === '1') {
         db.execute(
           `
           SELECT
@@ -72,8 +72,11 @@ router.get('/iot-data',
         )
       }
 
-      const aps = [1_000_000, 1_000_001, 1_000_002];
+      const aps = [1_000_000, 1_000_001];
       const sens = [1_000_000, 1_000_001, 1_000_002];
+
+
+      
 
       const r1 = Math.floor(Math.random() * aps.length);
       const r2 = Math.floor(Math.random() * sens.length);
