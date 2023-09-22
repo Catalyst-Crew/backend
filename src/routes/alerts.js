@@ -68,10 +68,10 @@ router.put('/:id',
             }
 
             if (dbResults.affectedRows < 1) {
-                return res.status(202).json({ message: "alerts not changed" })
+                return res.status(202).json({ message: "Alerts not changed" })
             }
 
-            res.status(200).json({ message: "alerts updated successfully" })
+            res.status(200).json({ message: "Alerts updated successfully" })
         })
     })
 );
