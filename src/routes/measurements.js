@@ -82,6 +82,7 @@ router.get('/iot-data',
       //Miner 1 at mine 1
       if (dataArry[0] === "1") {
         Id = devices[0]
+        ap = aps[0]
         saveMeasurement(Id, ap, Data, res);
       }
 
@@ -95,6 +96,7 @@ router.get('/iot-data',
       //miner 1 at mine 2
       if (dataArry[2] === "1") {
         Id = devices[1]
+        ap = aps[1]
         saveMeasurement(Id, ap, Data, res);
       }
 
