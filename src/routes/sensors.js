@@ -2,9 +2,9 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
-const { addToQueue, queueNames } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
 const { db, connection } = require('../utils/database');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const router = Router();
@@ -160,7 +160,7 @@ router.put('/',
                 device_id = ?           
             WHERE
                 id = ?;
-        `;
+            `;
 
         const deviceId = device_id ? device_id : null;
 

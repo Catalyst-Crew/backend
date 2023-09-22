@@ -131,7 +131,7 @@ router.post("/",
                         //Add log to queue
                         addToQueue(queueNames.LOGGER, { generatee_id: dbResults[0].id, generatee_name: "Authentication", massage: `User loggedin successfully ${dbResults[0].email}` })
 
-                        return res.status(200).json({ message: "User loggedin successfully.", data: { token, ...dbResults[0], password: "" } })
+                        return res.status(200).json({ message: "User logged successfully.", data: { token, ...dbResults[0], password: "" } })
                     }
 
                     return res.status(401).json({ message: "Invalid email or password." })

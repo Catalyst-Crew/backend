@@ -24,6 +24,7 @@ const settings = require("./src/routes/settings");
 const dasboard = require("./src/routes/dashboard");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
+const announcements = require("./src/routes/announcements");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,14 +44,14 @@ app.use(logger("short"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
+
+//if (!isDev) {
 db.getConnection((err) => {
     if (err) throw err;
     redisDb.connect()
-    db.query("SET time_zone = '+02:00';", (err) => {
-        if (err) throw err;
-        console.log("Database Connected");
-    })
 })
+//}
+
 
 //Routes here
 app.use("/auth", auth);
@@ -64,6 +65,7 @@ app.use("/settings", settings);
 app.use("/dashboard", dasboard);
 app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
+app.use("/announcements", announcements);
 app.all("/", (_, res) => {
     res.send("OK v0.0.2");
 });
@@ -81,18 +83,23 @@ app.use((err, _, res, __) => {
     }
 });
 
-//Start the server
-trycatch(() => (server.listen(PORT, () => {
-    console.log(`Server listening on port: ${PORT}`);
-})), (err) => {
-    app.use((_, res) => {
-        if (!isDev) {
-            const at = getLineFromError(err)
-            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
-        }
-        res.status(500).send({ message: "Something went wrong" });
+server.listen(PORT, () => {
+    console.log(`Server listening on port: ${PORT}`)
+}).on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+        console.error('Address in use, retrying...');
+        setTimeout(() => {
+            server.close();
+            server.listen(PORT);
+        }, 1000);
+    }
+
+    server.listen(PORT, () => {
+        console.log(`Server listening on port: ${PORT}`)
     });
-});
+})
+
+
 
 io.on('connection', (socket) => {
     console.log("New user: ", socket.id)
