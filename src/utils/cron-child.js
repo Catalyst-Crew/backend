@@ -24,7 +24,6 @@ function getFormattedDate() {
 
 //2:00
 cron.schedule('0 2 1 * *', () => {
-    console.log("Cron Jobs started...")
     generateAccessPoints([getFormattedDate(), getDaysFromNow(30)])
 });
 
@@ -61,16 +60,10 @@ cron.schedule('30 3 1 * *', () => {
 //3:45
 cron.schedule('45 3 1 * *', () => {
     generateUsersReport([getFormattedDate(), getDaysFromNow(30)])
-    console.log("Cron Jobs finished...")
 });
 
 
 //At 05:00 PM, Monday through Saturday
 cron.schedule('0 17 * * 1-6', () => {
-    console.log("Daily report generating...")
     generateMeasurments([`${getFormattedDate()} 00:00:00`, `${getFormattedDate()} 29:59:59`])
-    console.log("Daily report finished...")
 });
-
-
-console.log("Cron Jobs Active")
