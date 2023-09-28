@@ -1,3 +1,4 @@
+const keys = require('./keys');
 const cron = require('node-cron');
 const {
     generateAccessPoints,
@@ -10,6 +11,7 @@ const {
     generateUsersReport,
     getDaysFromNow
 } = require('./functions');
+const { redisDb } = require('./database');
 
 function getFormattedDate() {
     const today = new Date();
@@ -61,15 +63,17 @@ cron.schedule('30 3 1 * *', () => {
 //3:45
 cron.schedule('45 3 1 * *', () => {
     generateUsersReport([getFormattedDate(), getDaysFromNow(30)])
-    console.log("Cron Jobs finished...")
 });
 
 
 //At 05:00 PM, Monday through Saturday
 cron.schedule('0 17 * * 1-6', () => {
-    console.log("Daily report generating...")
     generateMeasurments([`${getFormattedDate()} 00:00:00`, `${getFormattedDate()} 29:59:59`])
-    console.log("Daily report finished...")
+});
+
+// 12:00 AM Everyday
+cron.schedule('0 0 * * * ', () => {
+    redisDb.lTrim(keys.INVALID_TOKENS, 0, 0)
 });
 
 
