@@ -16,7 +16,9 @@ const { centralEmitter, serverEvents } = require("./src/utils/events");
 const logs = require("./src/routes/log");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
+const admin = require("./src/routes/admin");
 const areas = require("./src/routes/areas");
+const static = require("./src/routes/static");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const reports = require("./src/routes/reports");
@@ -44,21 +46,20 @@ app.use(logger("short"))
 // //Connect to Db
 const isDev = process.env.IS_DEV === "true";
 
-
-//if (!isDev) {
 db.getConnection((err) => {
     if (err) throw err;
     redisDb.connect()
 })
-//}
 
 
 //Routes here
 app.use("/auth", auth);
 app.use("/logs", logs);
 app.use("/areas", areas);
+app.use("/admin", admin);
 app.use("/users", users);
 app.use("/miners", miners);
+app.use("/static", static);
 app.use("/sensors", sensors);
 app.use("/reports", reports);
 app.use("/settings", settings);
@@ -66,7 +67,7 @@ app.use("/dashboard", dasboard);
 app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
 app.use("/announcements", announcements);
-app.all("/", (_, res) => {
+app.all("*", (_, res) => {
     res.send("OK v0.0.2");
 });
 
