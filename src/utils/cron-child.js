@@ -73,7 +73,11 @@ cron.schedule('0 17 * * 1-6', () => {
 
 // 12:00 AM Everyday
 cron.schedule('0 0 * * * ', () => {
-    redisDb.lTrim(keys.INVALID_TOKENS, 0, 0)
+    try {
+        redisDb.lTrim(keys.INVALID_TOKENS, 0, 0)
+    } catch (e) {
+        console.log("Failed to run cron to clear invalid tokens: ", e);
+    }
 });
 
 
