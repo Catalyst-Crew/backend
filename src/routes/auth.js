@@ -86,6 +86,12 @@ router.post("/",
         const { email } = matchedData(req);
         const { password } = req.body;
 
+        const blocked = await redisDb.get(email);
+
+        if (blocked && blocked === keys.BLOCKED) {
+            return res.status(401).json({ message: "User temporaly blocked for 5 minutes", data: { email } })
+        }
+
         db.execute(`
             SELECT 
                 CONCAT(id_prefix, id) AS identity, 
@@ -135,10 +141,27 @@ router.post("/",
                         return res.status(200).json({ message: "User logged successfully.", data: { token, ...dbResults[0], password: "" } })
                     }
 
+                    const EXPIRE = 100;
+                    const exists = await redisDb.get(email);
+
+                    if (parseInt(exists) < 3) {
+                        redisDb.setEx(email, EXPIRE, `${parseInt(exists) + 1}`)
+                    }
+                    else if (parseInt(exists) === 3) {
+                        redisDb.setEx(email, EXPIRE, keys.BLOCKED)
+                        return res.status(401).json({ message: "Too many incorrect login attempts. Account blocked for 5 minutes." })
+                    }
+                    else {
+                        redisDb.setEx(email, EXPIRE, "1")
+                    }
+
                     return res.status(401).json({ message: "Invalid email or password." })
 
                 } catch (err) {
                     const at = getLineFromError(err)
+                    if (IS_DEV) {
+                        console.log(err);
+                    }
                     addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server | Auth", massage: `${err?.message || " "} ${at}` })
                     return res.status(500).json({ message: "Server error please try again later" })
                 }
@@ -223,7 +246,7 @@ router.patch("/forgot-password/:email/:code",
                     return res.status(200).json({ message: "Please notify management DB error occured" })
                 }
 
-                redisDb.del(email)
+                redisDb.del(email);
 
                 addToQueue(queueNames.LOGGER, { generatee_id: email, generatee_name: "Authentication", massage: "Password reset successfull" })
 
@@ -256,5 +279,3 @@ router.get("/logout/:token",
     ))
 
 module.exports = router;
-
-
