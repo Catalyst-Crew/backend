@@ -3,6 +3,7 @@ const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
 //Utils
+const keys = require('../utils/keys');
 const sendEmail = require('../utils/email');
 const { getLineFromError } = require('../utils/functions');
 const { addToQueue, queueNames } = require('../utils/logs');
@@ -235,6 +236,24 @@ router.patch("/forgot-password/:email/:code",
         )
     })
 );
+
+router.get("/logout/:token",
+    check("token").escape().isString().isJWT().withMessage("Invalid Token supplied"),
+    validationErrorMiddleware,
+    expressAsyncHandler(
+        async (req, res, next) => {
+            const { token } = matchedData(req);
+            try {
+                const data = await redisDb.lPush(keys.INVALID_TOKENS, token);
+                if (!data) {
+                    next("Failed to invalidate token");
+                }
+                return res.sendStatus(401);
+            } catch (error) {
+                return res.sendStatus(400);
+            }
+        }
+    ))
 
 module.exports = router;
 

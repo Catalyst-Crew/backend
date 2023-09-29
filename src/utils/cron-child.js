@@ -1,3 +1,4 @@
+const keys = require('./keys');
 const cron = require('node-cron');
 const {
     generateAccessPoints,
@@ -10,6 +11,7 @@ const {
     generateUsersReport,
     getDaysFromNow
 } = require('./functions');
+const { redisDb } = require('./database');
 
 function getFormattedDate() {
     const today = new Date();
@@ -18,7 +20,6 @@ function getFormattedDate() {
     const day = today.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
-
 
 //Cron jobs to run every 15 minutes on the 1st of each and every month
 
@@ -62,8 +63,18 @@ cron.schedule('45 3 1 * *', () => {
     generateUsersReport([getFormattedDate(), getDaysFromNow(30)])
 });
 
-
 //At 05:00 PM, Monday through Saturday
 cron.schedule('0 17 * * 1-6', () => {
     generateMeasurments([`${getFormattedDate()} 00:00:00`, `${getFormattedDate()} 29:59:59`])
 });
+
+// 12:00 AM Everyday
+cron.schedule('0 0 * * * ', () => {
+    try {
+        redisDb.lTrim(keys.INVALID_TOKENS, 0, 0)
+    } catch (e) {
+        console.log("Failed to run cron to clear invalid tokens: ", e);
+    }
+});
+
+console.log("Cron Jobs Active!")
