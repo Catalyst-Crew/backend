@@ -86,10 +86,9 @@ router.post("/",
         const { email } = matchedData(req);
         const { password } = req.body;
 
-        //Check if not blocked
         const blocked = await redisDb.get(email);
 
-        if(blocked && blocked === keys.BLOCKED){
+        if (blocked && blocked === keys.BLOCKED) {
             return res.status(401).json({ message: "User temporaly blocked for 5 minutes", data: { email } })
         }
 
@@ -142,24 +141,27 @@ router.post("/",
                         return res.status(200).json({ message: "User logged successfully.", data: { token, ...dbResults[0], password: "" } })
                     }
 
-                    const EXPIRE = 5_000
+                    const EXPIRE = 100;
                     const exists = await redisDb.get(email);
 
-                    if(exists < 3){
-                      redisDb.set(email, parseInt(exists) + 1, {EX: EXPIRE})
+                    if (parseInt(exists) < 3) {
+                        redisDb.setEx(email, EXPIRE, `${parseInt(exists) + 1}`)
                     }
-                    else if(parseInt(exists) === 3){
-                        redisDb.set(email, keys.BLOCKED, {EX: EXPIRE})
+                    else if (parseInt(exists) === 3) {
+                        redisDb.setEx(email, EXPIRE, keys.BLOCKED)
                         return res.status(401).json({ message: "Too many incorrect login attempts. Account blocked for 5 minutes." })
                     }
-                    else{
-                        redisDb.set(email, 1, {EX: EXPIRE})
+                    else {
+                        redisDb.setEx(email, EXPIRE, "1")
                     }
 
                     return res.status(401).json({ message: "Invalid email or password." })
 
                 } catch (err) {
                     const at = getLineFromError(err)
+                    if (IS_DEV) {
+                        console.log(err);
+                    }
                     addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server | Auth", massage: `${err?.message || " "} ${at}` })
                     return res.status(500).json({ message: "Server error please try again later" })
                 }
@@ -277,39 +279,3 @@ router.get("/logout/:token",
     ))
 
 module.exports = router;
-
-
-// const express = require('express')
-// const rateLimit = require('express-rate-limit')
-// const Redis = require('ioredis')
-// const login = require('./login')
-
-// const app = express()
-// const redis = new Redis()
-// // Each IP can only send 5 login requests in 10 minutes
-// const loginRateLimiter = new rateLimit({ max: 5, windowMS: 1000 * 60 * 10 })
-
-// const maxNumberOfFailedLogins = 3;
-// const timeWindowForFailedLogins = 24 * 60 * 60 //* 1
-
-// app.get('api/login', loginRateLimiter, async (req, res) => {
-//     const { user, password } = req.body
-//    // check user is not attempted too many login requests
-//    const userAttempts = await redis.get(user);
-//    if (userAttempts > maxNumberOfFailedLogins) {
-//      return res.status(429).send("Too Many Attempts try it one 24 hours later")
-//    }
-
-//    // Let's check user
-//    const loginResult = await login(user, password)
-
-//    // user attempt failed
-//    if(!loginResult) {
-//      await redis.set(user, ++userAttempts, 'ex', timeWindowForFailedLogins)
-//      res.send("failed")
-//    } else {
-//     // successful login
-//     await redis.del(user)
-//     res.send("success")
-//    }
-// })
