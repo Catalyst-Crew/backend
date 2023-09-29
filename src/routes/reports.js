@@ -134,8 +134,6 @@ router.post("/upload/new",
   expressAsyncHandler(async (req, res) => {
     const { user_id, file_name } = matchedData(req);
 
-    console.log("Here")
-
     const newFileName = `${file_name + Date.now()}.csv`;
 
     try {

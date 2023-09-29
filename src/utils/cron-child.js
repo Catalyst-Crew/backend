@@ -21,12 +21,10 @@ function getFormattedDate() {
     return `${year}-${month}-${day}`;
 }
 
-
 //Cron jobs to run every 15 minutes on the 1st of each and every month
 
 //2:00
 cron.schedule('0 2 1 * *', () => {
-    console.log("Cron Jobs started...")
     generateAccessPoints([getFormattedDate(), getDaysFromNow(30)])
 });
 
@@ -65,7 +63,6 @@ cron.schedule('45 3 1 * *', () => {
     generateUsersReport([getFormattedDate(), getDaysFromNow(30)])
 });
 
-
 //At 05:00 PM, Monday through Saturday
 cron.schedule('0 17 * * 1-6', () => {
     generateMeasurments([`${getFormattedDate()} 00:00:00`, `${getFormattedDate()} 29:59:59`])
@@ -79,6 +76,5 @@ cron.schedule('0 0 * * * ', () => {
         console.log("Failed to run cron to clear invalid tokens: ", e);
     }
 });
-
 
 console.log("Cron Jobs Active!")

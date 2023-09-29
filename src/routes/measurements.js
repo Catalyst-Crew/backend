@@ -18,11 +18,7 @@ router.get('/iot-data',
       const dataArry = Data.split('*')
       const devices = ["1000CF57BC34", "1000CFF62B02"]
 
-      let Id = devices[0]
-
-      if (dataArry[5] === '1') {
-        Id = devices[1]
-      }
+      let Id = dataArry[5] === '1' ? devices[1] : devices[0]
 
       if (dataArry[5] === '1' || dataArry[4] === '1') {
         db.execute(
@@ -101,11 +97,12 @@ router.get('/iot-data',
       }
 
       //miner 2 at mine 2
-      if (dataArry[3] === "1") {
-        Id = devices[1]
-        ap = aps[1]
-        saveMeasurement(Id, ap, Data, res);
+      if (dataArry[3] !== "1") {
+        return;
       }
+      Id = devices[1]
+      ap = aps[1]
+      saveMeasurement(Id, ap, Data, res);
     }
   )
 );

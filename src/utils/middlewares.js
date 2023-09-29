@@ -11,4 +11,15 @@ const validationErrorMiddleware = expressAsyncHandler(
         next();
     })
 
-module.exports = { validationErrorMiddleware };
+const queuePassValidation = expressAsyncHandler(
+    (req, res, next) => {
+        const { pass } = req.params
+        
+        if (pass !== process.env.QUEUE_PASS) {
+            return res.redirect(process.env.API_HOST)
+        }
+
+        next()
+    })
+
+module.exports = { validationErrorMiddleware, queuePassValidation };
