@@ -73,4 +73,4 @@ cron.schedule('0 17 * * 1-6', () => {
 });
 
 
-console.log("Cron Jobs Active")
+console.log("Cron Jobs Active!")

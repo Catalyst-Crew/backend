@@ -17,6 +17,7 @@ const logs = require("./src/routes/log");
 const auth = require("./src/routes/auth");
 const users = require("./src/routes/users");
 const areas = require("./src/routes/areas");
+const alerts = require("./src/routes/alerts");
 const miners = require("./src/routes/miners");
 const sensors = require("./src/routes/sensors");
 const reports = require("./src/routes/reports");
@@ -57,6 +58,7 @@ db.getConnection((err) => {
 app.use("/auth", auth);
 app.use("/logs", logs);
 app.use("/areas", areas);
+app.use("/alerts", alerts);
 app.use("/users", users);
 app.use("/miners", miners);
 app.use("/sensors", sensors);
@@ -115,11 +117,13 @@ io.on('connection', (socket) => {
     centralEmitter.on(serverEvents.ACCESS_POINT_FULL, (data) => {
         socket.emit(serverEvents.ACCESS_POINT_FULL, data);
     });
+
     centralEmitter.on(serverEvents.NEW_MEASUREMENT, (data) => {
         socket.emit(serverEvents.NEW_MEASUREMENT, data);
     });
 
     socket.on('disconnect', () => {
+        socket.disconnect()
         console.log('user disconnected: ', socket.id);
     });
 });
