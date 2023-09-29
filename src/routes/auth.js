@@ -11,6 +11,7 @@ const { db, getNewPassword, redisDb } = require('../utils/database');
 const { hashPassword, verifyPassword } = require('../utils/password');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
+
 //Inti
 const router = Router();
 
@@ -234,3 +235,37 @@ router.patch("/forgot-password/:email/:code",
 module.exports = router;
 
 
+const express = require('express')
+const rateLimit = require('express-rate-limit')
+const Redis = require('ioredis')
+const login = require('./login')
+
+const app = express()
+const redis = new Redis()
+// Each IP can only send 5 login requests in 10 minutes
+const loginRateLimiter = new rateLimit({ max: 5, windowMS: 1000 * 60 * 10 })
+
+const maxNumberOfFailedLogins = 3;
+const timeWindowForFailedLogins = 24 * 60 * 60 //* 1
+
+app.get('api/login', loginRateLimiter, async (req, res) => {
+    const { user, password } = req.body
+   // check user is not attempted too many login requests
+   const userAttempts = await redis.get(user);
+   if (userAttempts > maxNumberOfFailedLogins) {
+     return res.status(429).send("Too Many Attempts try it one 24 hours later")
+   }
+
+   // Let's check user
+   const loginResult = await login(user, password)
+
+   // user attempt failed
+   if(!loginResult) {
+     await redis.set(user, ++userAttempts, 'ex', timeWindowForFailedLogins)
+     res.send("failed")
+   } else {
+    // successful login
+    await redis.del(user)
+    res.send("success")
+   }
+})
