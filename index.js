@@ -6,6 +6,7 @@ const express = require("express");
 const trycatch = require("trycatch");
 const { Server } = require("socket.io");
 const { fork } = require('child_process');
+const { rateLimit } = require('express-rate-limit');
 
 const { db, redisDb } = require("./src/utils/database");
 const { getLineFromError } = require("./src/utils/functions");
@@ -32,8 +33,11 @@ const announcements = require("./src/routes/announcements");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const limiter = rateLimit({ max: 2 });
 const PORT = process.env.PORT || 3000;
+
 //Apply Midllewares
+app.use(limiter);
 app.enable("trust proxy");
 app.use([
     express.json(),
