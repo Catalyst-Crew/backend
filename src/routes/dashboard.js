@@ -5,10 +5,8 @@ const { db } = require('../utils/database');
 const { verifyToken } = require('../utils/tokens');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
-const ENV = process.env.IS_DEV === "true";
-
-
 const router = Router();
+const ENV = process.env.IS_DEV === "true";
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
@@ -152,7 +150,17 @@ router.get('/',
                 })
             }).flat();
 
-            res.status(200).json({ areas, access_points })
+            const uniqueAccessPointIds = new Set();
+
+            //Filter out duplicates
+            const uniqueArray = access_points.filter((obj) => {
+                if (!uniqueAccessPointIds.has(obj.access_point_id)) {
+                    uniqueAccessPointIds.add(obj.access_point_id);
+                    return true;
+                }
+            });
+
+            res.status(200).json({ areas, access_points: uniqueArray })
         }))
     })
 );

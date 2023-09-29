@@ -7,7 +7,8 @@ const serverEvents = {
     ACCESS_POINT_FULL: "ACCESS_POINT_FULL",
     NEW_ALERT: "NEW_ALERT",
     QUEUE_UPDATE: "QUEUE_UPDATE",
-    NEW_MEASUREMENT: "NEW_MEASUREMENT"
+    NEW_MEASUREMENT: "NEW_MEASUREMENT",
+    GENERATE_COMPLETE: "GENERATE_COMPLETE"
 }
 
 module.exports = { serverEvents, centralEmitter };

@@ -1,13 +1,24 @@
-
 const { Router } = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const { check, validationResult, matchedData } = require("express-validator");
 
 const { db } = require('../utils/database');
-const { addLogToQueue } = require('../utils/logs');
+const { verifyToken } = require('../utils/tokens');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
 const route = Router();
+const ENV = process.env.IS_DEV === "true";
+
+route.use(expressAsyncHandler(async (req, res, next) => {
+    if (!ENV) {
+        verifyToken(req, res, next); //uncomment in production
+    }
+
+    if (ENV) {
+        next() //Remove this on production
+    }
+}));
 
 route.put('/:id',
     check(["id", "access", "areaId", "user", "role"]).notEmpty().escape().withMessage("Please make sure all fields are present"),
@@ -34,19 +45,18 @@ route.put('/:id',
             [parseInt(access), parseInt(areaId), user, parseInt(role), parseInt(id)],
             (err, dbResults) => {
                 if (err) {
-                    console.log(err);
                     return res.status(500).json({ message: "User not found", error: process.env.IS_DEV === "true" ? err : 1 });
                 }
 
                 if (dbResults.affectedRows) {
-                    addLogToQueue(id, "User", `User updated successfully by ${user} with id ${id} and role ${role} and access ${access} and areaId ${areaId}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: user, generatee_name: "Users", massage: `User updated successfully by ${user} with id ${id} and role ${role} and access ${access} and areaId ${areaId}` })
                 }
 
                 return res.status(200).json({ message: "User updated successfully" });
             }
         )
     })
-)
+);
 
 //get all users
 route.get('/',
@@ -91,7 +101,7 @@ route.get('/',
             }
         )
     })
-)
+);
 
 //get all supervisors
 route.get('/supervisors',
@@ -124,8 +134,7 @@ route.get('/supervisors',
         }
         )
     })
-)
-
+);
 
 //update a user
 route.put('/update/:id',
@@ -149,13 +158,13 @@ route.put('/update/:id',
                 }
 
                 if (dbResults.affectedRows) {
-                    addLogToQueue(id, "User", `User updated successfully by ${name} with id ${id} and phone ${phone}`);
+                    addToQueue(queueNames.LOGGER, { generatee_id: id, generatee_name: "User", massage: `User updated successfully by ${name} with id ${id} and phone ${phone}`})
                 }
 
                 return res.status(200).json({ message: "User updated successfully" });
             }
         )
     })
-)
+);
 
 module.exports = route;

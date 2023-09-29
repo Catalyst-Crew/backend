@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { addLogToQueue } = require("./logs");
+const { addToQueue, queueNames } = require("./logs");
 
 async function sendEmail(reciever = "", subject = "New massage", massage = "", emailAlias = "no-reply") {
     const transporter = nodemailer.createTransport({
@@ -24,7 +24,7 @@ async function sendEmail(reciever = "", subject = "New massage", massage = "", e
                 return false;
             }
 
-            addLogToQueue(info.messageId, "Email", `Email sent to ${reciever} with subject ${subject}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: info.messageId, generatee_name: "Email", massage: `Email sent to ${reciever} with subject ${subject}` })
 
             return true;
         })

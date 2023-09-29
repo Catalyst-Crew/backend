@@ -1,6 +1,9 @@
 const { db } = require('./database');
 const { Worker, Queue } = require('bullmq');
 
+const { createBullBoard } = require('@bull-board/api');
+const { ExpressAdapter } = require('@bull-board/express');
+const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 
 const CONNECTION = {
     host: process.env.REDIS_HOST,
@@ -9,47 +12,70 @@ const CONNECTION = {
     username: process.env.REDIS_USERNAME
 }
 
-new Worker('logger',
-    async job => {
-        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
-            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
-    }, {
-    connection: CONNECTION
-});
-new Worker('logger',
-    async (job) => {
-        db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
-            [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
-    }, {
-    connection: CONNECTION
-});
-new Worker('report',
-    async (job) => {
-        db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
-            [job.data.id, job.data.file_name])
-    }, {
-    connection: CONNECTION
-});
-
-
-const myQueue = new Queue('logger', {
-    connection: CONNECTION
-});
-const report = new Queue('report', {
-    connection: CONNECTION
-});
-
-
-function addLogToQueue(generatee_id, generatee_name, massage) {
-    myQueue.add('log', { generatee_id, generatee_name, massage });
+const queueNames = {
+    LOGGER: 'logger',
+    REPORT: 'report',
+    GENERATE: 'generate'
 }
 
-function addReportToQueue(id = 999_999, file_name) {
-    report.add('report', { id, file_name });
+const myQueue = new Queue(queueNames.LOGGER, {
+    connection: CONNECTION
+});
+
+const generate = new Queue(queueNames.GENERATE, {
+    connection: CONNECTION
+});
+
+// new Worker(queueNames.LOGGER,
+//     async job => {
+//         if (job.name === queueNames.LOGGER) {
+//             db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
+//                 [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
+//         } else if (job.name === queueNames.REPORT) {
+//             db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
+//                 [job.data.user_id, job.data.logFileName])
+//         }
+//     }, {
+//     connection: CONNECTION
+// });
+
+function addToQueue(type, data) {
+    myQueue.add(type, data);
 }
 
-//Add do retry queue
+function addGeneratJob(data) {
+    generate.add(data.report_type, data);
+}
 
-//Add to error queue (generate notification)
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath(`/admin/queues/${process.env.QUEUE_PASS}`);
 
-module.exports = { addLogToQueue, addReportToQueue };
+createBullBoard({
+    queues: [
+        new BullMQAdapter(myQueue),
+        new BullMQAdapter(generate)
+    ],
+    serverAdapter,
+    options: {
+        uiConfig: {
+            boardTitle: 'RescueRadar',
+            boardLogo: {
+                path: `${process.env.API_HOST}/static/icon.png`,
+                width: 80,
+                height: 80
+            },
+            favIcon: {
+                default: `${process.env.API_HOST}/static/icon.ico`,
+            },
+        }
+    }
+});
+
+
+module.exports = {
+    CONNECTION,
+    queueNames,
+    addToQueue,
+    addGeneratJob,
+    serverAdapter
+};

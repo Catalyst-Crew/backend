@@ -26,4 +26,4 @@ Then open you code editor then start working...
 - [ ] Error queue (generate notification)
 - [ ] Generate reports
 - [ ] Geo fence alerts
-- [ ] Announcements
+- [x] Announcements

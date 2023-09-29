@@ -2,14 +2,13 @@ const { Router } = require('express');
 const { check, matchedData } = require("express-validator");
 const expressAsyncHandler = require('express-async-handler');
 
-const { addLogToQueue } = require('../utils/logs');
 const { verifyToken } = require('../utils/tokens');
 const { db, connection } = require('../utils/database');
+const { addToQueue, queueNames } = require('../utils/logs');
 const { validationErrorMiddleware } = require('../utils/middlewares');
 
+const router = Router();
 const ENV = process.env.IS_DEV === "true";
-
-const router = Router()
 
 router.use(expressAsyncHandler(async (req, res, next) => {
     if (!ENV) {
@@ -19,8 +18,7 @@ router.use(expressAsyncHandler(async (req, res, next) => {
     if (ENV) {
         next() //Remove this on production
     }
-}
-))
+}));
 
 //get all sensors
 router.get('/',
@@ -134,7 +132,7 @@ router.post('/',
                 return res.status(202).json({ message: "Sensor not created." });
             }
 
-            addLogToQueue(user_id, "Sensor", `Sensor created successfully with id ${dbResults.insertId} and deviceid ${device_id}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Sensor", massage:`Sensor created successfully with id ${dbResults.insertId} and deviceid ${device_id}`})
 
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
         })
@@ -162,7 +160,7 @@ router.put('/',
                 device_id = ?           
             WHERE
                 id = ?;
-        `;
+            `;
 
         const deviceId = device_id ? device_id : null;
 
@@ -175,7 +173,7 @@ router.put('/',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addLogToQueue(id, "Sensor", `Sensor updated successfully by ${username} available ${available}, deviceId ${device_id} and active ${status}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage:`Sensor updated successfully by ${username} available ${available}, deviceId ${device_id} and active ${status}`})
 
             res.status(200).json({ message: "Sensor updated successfully." })
         })
@@ -217,7 +215,7 @@ router.put('/unassign',
 
             await (await connection).commit();
 
-            addLogToQueue(username, "Sensor", `Sensor unattaced from device successfully by ${username}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unattaced from device successfully by ${username}`})
 
             res.status(200).json({ message: "Sensor unassigned successfully." });
         } catch (err) {
@@ -268,7 +266,7 @@ router.put('/unassign/:id',
 
             await (await connection).commit();
 
-            addLogToQueue(username, "Sensor", `Sensor unassigned successfully by ${username}`);
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unassigned from device successfully by ${username}`})
 
             res.status(200).json({ message: "Sensor unassigned successfully." });
         } catch (err) {

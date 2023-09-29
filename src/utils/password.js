@@ -1,5 +1,5 @@
-const saltRounds = 10;
 const bcrypt = require('bcrypt');
+const saltRounds = parseInt(process.env.SALT_ROUNDS)
 
 const getNewPassword = () => {
     const length = 16;
