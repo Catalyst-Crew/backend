@@ -22,18 +22,18 @@ const generate = new Queue(queueNames.GENERATE, {
     connection: CONNECTION
 });
 
-new Worker(queueNames.LOGGER,
-    async job => {
-        if (job.name === queueNames.LOGGER) {
-            db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
-                [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
-        } else if (job.name === queueNames.REPORT) {
-            db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
-                [job.data.user_id, job.data.logFileName])
-        }
-    }, {
-    connection: CONNECTION
-});
+// new Worker(queueNames.LOGGER,
+//     async job => {
+//         if (job.name === queueNames.LOGGER) {
+//             db.execute(`INSERT INTO logs (loger_id, loger_name, message) VALUES (?, ?, ?)`,
+//                 [job.data.generatee_id.toString(), job.data.generatee_name.toString(), job.data.massage.toString()])
+//         } else if (job.name === queueNames.REPORT) {
+//             db.execute(`INSERT INTO reports(user_id, file_name) VALUES (?, ?);`,
+//                 [job.data.user_id, job.data.logFileName])
+//         }
+//     }, {
+//     connection: CONNECTION
+// });
 
 function addToQueue(type, data) {
     myQueue.add(type, data);
