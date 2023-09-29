@@ -81,4 +81,4 @@ cron.schedule('0 0 * * * ', () => {
 });
 
 
-console.log("Cron Jobs Active")
+console.log("Cron Jobs Active!")
