@@ -109,15 +109,16 @@ router.post("/:report_type",
           notifty_email = email;
 
           addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Reports", massage: `Generating report for user ${email}.` })
-
+          
           addGeneratJob({ ...matchedData(req), notifty_email })
-
+          
           return res.status(200).json({ message: "Generating report." })
         }
-      )
-      return
-    }
-
+        )
+        return
+      }
+      
+    addGeneratJob({ ...matchedData(req), notifty_email })
     addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Reports", massage:  `Generating report for user ${user_id}.`})
     
     return res.status(200).json({ message: "Generating report." })
