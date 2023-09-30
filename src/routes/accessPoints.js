@@ -172,8 +172,8 @@ router.post('/',
     [
         check("area_id", "area_id is required").escape().notEmpty().isNumeric().toInt(),
         check("name", "name is required").escape().notEmpty().isString(),
-        check("latitude", "latitude is required").escape().notEmpty().isNumeric().toInt(),
-        check("longitude", "longitude is required").escape().notEmpty().isNumeric().toInt(),
+        check("latitude", "latitude is required").escape().notEmpty().isNumeric().toFloat(),
+        check("longitude", "longitude is required").escape().notEmpty().isNumeric().toFloat(),
         check("status", "status is required").escape().notEmpty().isNumeric().toInt(),
         check("device_id", "device_id is required").escape().isString(),
         check("username", "username is required").escape().notEmpty().isString()
