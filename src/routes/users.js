@@ -86,8 +86,7 @@ route.get('/',
             INNER JOIN
                 areas ar ON u.area_id = ar.id 
             WHERE
-                u.access_id != 1000003 
-            ;`,
+                u.access_id != 1000002;`,
             (err, dbResults) => {
                 if (err) {
                     return res.status(500).json({ error: process.env.IS_DEV === "true" ? err : 1 });
@@ -158,7 +157,7 @@ route.put('/update/:id',
                 }
 
                 if (dbResults.affectedRows) {
-                    addToQueue(queueNames.LOGGER, { generatee_id: id, generatee_name: "User", massage: `User updated successfully by ${name} with id ${id} and phone ${phone}`})
+                    addToQueue(queueNames.LOGGER, { generatee_id: id, generatee_name: "User", massage: `User updated successfully by ${name} with id ${id} and phone ${phone}` })
                 }
 
                 return res.status(200).json({ message: "User updated successfully" });
