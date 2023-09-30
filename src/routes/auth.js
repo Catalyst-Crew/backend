@@ -7,7 +7,7 @@ const keys = require('../utils/keys');
 const sendEmail = require('../utils/email');
 const { getLineFromError } = require('../utils/functions');
 const { addToQueue, queueNames } = require('../utils/logs');
-const { newToken, getRandomCode } = require('../utils/tokens');
+const { newToken, getRandomCode, verifyToken } = require('../utils/tokens');
 const { db, getNewPassword, redisDb } = require('../utils/database');
 const { hashPassword, verifyPassword } = require('../utils/password');
 const { validationErrorMiddleware } = require('../utils/middlewares');
@@ -271,11 +271,21 @@ router.get("/logout/:token",
                 if (!data) {
                     next("Failed to invalidate token");
                 }
-                return res.sendStatus(401);
+
+                return next();
             } catch (error) {
                 return res.sendStatus(400);
             }
         }
-    ))
+    ), verifyToken,
+    expressAsyncHandler((req, res) => {
+        try {
+            addToQueue(queueNames.LOGGER, { generatee_id: req.userData.email, generatee_name: "Authentication", massage: `User logged out ${JSON.stringify(req.userData)}` })
+            return res.sendStatus(401);
+        } catch (error) {
+            console.log(error);
+        }
+    })
+)
 
 module.exports = router;
