@@ -48,7 +48,7 @@ router.get('/',
             }
 
             if (dbResults.length === 0) {
-                return res.status(202).json({ message: "No available sesnsor please add more on 'Access Points' tab." });
+                return res.status(202).json({ message: "No available sensor please add more on 'Access Points' tab." });
             }
             res.status(200).json({ message: "Sensors fetched successfully.", data: dbResults })
         })
