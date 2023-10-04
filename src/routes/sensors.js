@@ -132,7 +132,7 @@ router.post('/',
                 return res.status(202).json({ message: "Sensor not created." });
             }
 
-            addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Sensor", massage:`Sensor created successfully with id ${dbResults.insertId} and deviceid ${device_id}`})
+            addToQueue(queueNames.LOGGER, { generatee_id: user_id, generatee_name: "Sensor", massage: `Sensor created successfully with id ${dbResults.insertId} and deviceid ${device_id}` })
 
             res.status(201).json({ message: "Sensor created successfully.", data: dbResults })
         })
@@ -173,7 +173,7 @@ router.put('/',
                 return res.status(202).json({ message: "Sensor not updated." });
             }
 
-            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage:`Sensor updated successfully by ${username} available ${available}, deviceId ${device_id} and active ${status}`})
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor updated successfully by ${username} available ${available}, deviceId ${device_id} and active ${status}` })
 
             res.status(200).json({ message: "Sensor updated successfully." })
         })
@@ -215,7 +215,7 @@ router.put('/unassign',
 
             await (await connection).commit();
 
-            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unattaced from device successfully by ${username}`})
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unattaced from device successfully by ${username}` })
 
             res.status(200).json({ message: "Sensor unassigned successfully." });
         } catch (err) {
@@ -247,7 +247,7 @@ router.put('/unassign/:id',
                     updated_by = ?
                 WHERE
                     sensor_id = ?;
-                `, [username, parseInt(id)]);
+                `, [username, id]);
 
             if (dbResults.affectedRows === 0) {
                 await (await connection).rollback();
@@ -256,7 +256,7 @@ router.put('/unassign/:id',
 
             (await connection).execute(
                 'UPDATE sensors SET available = 1 WHERE id = ?',
-                [parseInt(id)]
+                [id]
             ).then(async ([dbResults]) => {
                 if (dbResults.affectedRows === 0) {
                     (await connection).rollback();
@@ -266,13 +266,13 @@ router.put('/unassign/:id',
 
             await (await connection).commit();
 
-            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unassigned from device successfully by ${username}`})
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unassigned from device successfully by ${username}` })
 
             res.status(200).json({ message: "Sensor unassigned successfully." });
         } catch (err) {
             await (await connection).rollback();
             console.error('Transaction Error:', err);
-            return res.status(500).json({ error: ENV ? err : 1 });
+            return res.status(500).json({ error: ENV ? err : 1, message: "Cannot perform that action right now #1" });
         }
     })
 );
