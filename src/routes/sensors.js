@@ -266,7 +266,7 @@ router.put('/unassign/:id',
 
             await (await connection).commit();
 
-            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unassigned from device successfully by ${username}` })
+            addToQueue(queueNames.LOGGER, { generatee_id: username, generatee_name: "Sensor", massage: `Sensor unassigned from employee ${id} successfully by ${username}` })
 
             res.status(200).json({ message: "Sensor unassigned successfully." });
         } catch (err) {
