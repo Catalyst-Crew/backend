@@ -3,7 +3,6 @@ const cors = require("cors");
 const http = require('http');
 const logger = require('morgan')
 const express = require("express");
-const trycatch = require("trycatch");
 const { Server } = require("socket.io");
 const { fork } = require('child_process');
 const { rateLimit } = require('express-rate-limit');
@@ -33,7 +32,7 @@ const announcements = require("./src/routes/announcements");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const limiter = rateLimit({skipSuccessfulRequests: true, windowMs: 200});
+const limiter = rateLimit({ skipSuccessfulRequests: true, windowMs: 200 });
 const PORT = process.env.PORT || 3000;
 
 //Apply Midllewares
@@ -47,14 +46,13 @@ app.use([
 ]);
 app.use(logger("short"))
 
-// //Connect to Db
+// //Connect to Db 
 const isDev = process.env.IS_DEV === "true";
 
 db.getConnection((err) => {
     if (err) throw err;
     redisDb.connect()
 })
-
 
 //Routes here
 app.use("/auth", auth);
@@ -80,13 +78,12 @@ app.all("*", (_, res) => {
 app.use((err, _, res, __) => {
     res.status(500).send({ message: "Something went wrong" });
     const at = getLineFromError(err)
+
     if (isDev) {
-        trycatch(() => console.log(err.message), (err) => console.log(err.message));
-    } else {
-        trycatch(() =>
-            addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
-        );
+        console.log(err.message)
+        addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
     }
+    return;
 });
 
 server.listen(PORT, () => {
