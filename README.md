@@ -23,11 +23,11 @@ Then open you code editor then start working...
 
 ## Todo
 - [ ] Retry queue
-- [ ] Error queue (generate notification)
-- [ ] Generate reports
+- [x] Error queue (generate notification)
+- [x] Generate reports
 - [ ] Geo fence alerts
-
-<a href="https://github.com/pittcsc/Summer2024-Internships/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=pittcsc/Summer2024-Internships&columns=24&max=480" />
-</a>
 - [x] Announcements
+
+<a href="https://github.com/Catalyst-Crew/backend/graphs/contributors">
+<img src="https://contrib.rocks/image?repo=Catalyst-Crew/backend&columns=24&max=480" />
+</a>
