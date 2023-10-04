@@ -26,4 +26,8 @@ Then open you code editor then start working...
 - [ ] Error queue (generate notification)
 - [ ] Generate reports
 - [ ] Geo fence alerts
+
+<a href="https://github.com/pittcsc/Summer2024-Internships/graphs/contributors">
+<img src="https://contrib.rocks/image?repo=pittcsc/Summer2024-Internships&columns=24&max=480" />
+</a>
 - [x] Announcements
