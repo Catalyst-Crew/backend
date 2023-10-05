@@ -66,6 +66,7 @@ router.get('/iot-data',
             return res.send("Ok")
           }
         )
+        return;
       }
 
       if (dataArry[0] === '0' && dataArry[1] === '0' && dataArry[2] === '0' && dataArry[3] === '0') {
@@ -77,32 +78,33 @@ router.get('/iot-data',
 
       //Miner 1 at mine 1
       if (dataArry[0] === "1") {
-        Id = devices[0]
-        ap = aps[0]
+        Id = devices[0] //Miner 1
+        ap = aps[0] // Accesspoint 1
         saveMeasurement(Id, ap, Data, res);
       }
 
       //miner 2 at mine 1
       if (dataArry[1] === "1") {
-        Id = devices[1]
-        ap = aps[0]
+        Id = devices[1] //Miner 2
+        ap = aps[0] // Accesspoint 1
         saveMeasurement(Id, ap, Data, res);
       }
 
       //miner 1 at mine 2
       if (dataArry[2] === "1") {
-        Id = devices[1]
-        ap = aps[1]
+        Id = devices[0] // Miner 1
+        ap = aps[1] // Accesspoint 2
         saveMeasurement(Id, ap, Data, res);
       }
 
       //miner 2 at mine 2
-      if (dataArry[3] !== "1") {
-        return;
+      if (dataArry[3] == "1") {
+        Id = devices[1] // Miner 1
+        ap = aps[1] // Accesspoint 2
+        saveMeasurement(Id, ap, Data, res);
       }
-      Id = devices[1]
-      ap = aps[1]
-      saveMeasurement(Id, ap, Data, res);
+
+      return res.send("Recorded");
     }
   )
 );
@@ -136,7 +138,7 @@ const saveMeasurement = (Id, ap, Data, res) => {
         [dbResults[0].sensor_id, ap, dbResults[0].access_point_name, Data],
         (err, dbResults2) => {
           if (err) {
-            return console.log(" INSERT INTO measurements: ", err);
+            return console.log("INSERT INTO measurements: ", err);
           }
 
           //console.log("New measurement: ", dbResults2.insertId);
