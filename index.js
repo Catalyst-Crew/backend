@@ -28,6 +28,7 @@ const dasboard = require("./src/routes/dashboard");
 const measurements = require("./src/routes/measurements");
 const accessPoints = require("./src/routes/accessPoints");
 const announcements = require("./src/routes/announcements");
+const { log } = require("console");
 
 const app = express();
 const server = http.createServer(app);
@@ -49,8 +50,13 @@ app.use(logger("short"))
 // //Connect to Db 
 const isDev = process.env.IS_DEV === "true";
 
-db.getConnection((err) => {
+db.getConnection((err, c) => {
     if (err) throw err;
+    c.execute("SET @@global.time_zone = '+02:00';", (err, results) => {
+        if (err) throw err;
+
+        log("Timezone set success: ", results)
+    })
     redisDb.connect()
 })
 
@@ -71,7 +77,7 @@ app.use("/measurements", measurements);
 app.use("/access-points", accessPoints);
 app.use("/announcements", announcements);
 app.all("*", (_, res) => {
-    res.send("OK v0.0.2");
+    res.send("OK v0.0.5");
 });
 
 //Error handler
@@ -80,17 +86,17 @@ app.use((err, _, res, __) => {
     const at = getLineFromError(err)
 
     if (isDev) {
-        console.log(err.message)
+        log(err.message)
         addToQueue(queueNames.LOGGER, { generatee_id: 999_999, generatee_name: "Server", massage: `${err.message} ${at}` })
     }
     return;
 });
 
 server.listen(PORT, () => {
-    console.log(`Server listening on port: ${PORT}`)
+    log(`Server listening on port: ${PORT}`)
 }).on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
-        console.error('Address in use, retrying...');
+        error('Address in use, retrying...');
         setTimeout(() => {
             server.close();
             server.listen(PORT);
@@ -98,14 +104,14 @@ server.listen(PORT, () => {
     }
 
     server.listen(PORT, () => {
-        console.log(`Server listening on port: ${PORT}`)
+        log(`Server listening on port: ${PORT}`)
     });
 })
 
 
 
 io.on('connection', (socket) => {
-    console.log("New user: ", socket.id)
+    log("New user: ", socket.id)
 
     centralEmitter.on(serverEvents.NEW_ALERT, (data) => {
         socket.emit(serverEvents.NEW_ALERT, data);
@@ -125,7 +131,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         socket.disconnect()
-        console.log('user disconnected: ', socket.id);
+        log('user disconnected: ', socket.id);
     });
 });
 
