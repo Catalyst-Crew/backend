@@ -1,6 +1,6 @@
 const { Worker, } = require('bullmq');
 const { CONNECTION, queueNames } = require('./logs');
-const { generateMeasurments, generateLogs, generateReport, generateAreas, generateSensorsReport, generateUsersReport, generateMiners, generateAccessPoints } = require('./functions');
+const { generateMeasurments, generateLogs, generateReport, generateAreas, generateSensorsReport, generateUsersReport, generateMiners, generateAccessPoints, generateAlerts } = require('./functions');
 const { db } = require('./database');
 
 
@@ -24,8 +24,10 @@ new Worker(queueNames.GENERATE,
             generateSensorsReport(data.date_range, data.user_id, { email: data.notifty_email, notify: data.notify_user })
         } else if (job.name === "areas") {
             generateAreas(data.date_range, data.user_id, { email: data.notifty_email, notify: data.notify_user })
+        } else if (job.name === "alerts") {
+            generateAlerts(data.date_range, data.user_id, { email: data.notifty_email, notify: data.notify_user })
         }
-        
+
     }, {
     connection: CONNECTION
 });
