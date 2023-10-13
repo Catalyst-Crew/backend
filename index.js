@@ -108,7 +108,15 @@ server.listen(PORT, () => {
     });
 })
 
+process.on("exit", () => {
+    redisDb.disconnect();
+    db.end()
+})
 
+server.on("close", () => {
+    redisDb.disconnect();
+    db.end()
+})
 
 io.on('connection', (socket) => {
     log("New user: ", socket.id)
