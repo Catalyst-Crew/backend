@@ -52,7 +52,7 @@ const isDev = process.env.IS_DEV === "true";
 
 db.getConnection((err, c) => {
     if (err) throw err;
-    c.execute("SET @@global.time_zone = '+02:00';", (err, results) => {
+    db.execute("SET @@global.time_zone = '+02:00';", (err, results) => {
         if (err) throw err;
 
         log("Timezone set success: ", results)
