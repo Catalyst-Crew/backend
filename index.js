@@ -109,13 +109,21 @@ server.listen(PORT, () => {
 })
 
 process.on("exit", () => {
-    redisDb.disconnect();
-    db.end()
+    try {
+        redisDb.disconnect();
+        db.end()
+    } catch (e) {
+        log("Exit 1")
+    }
 })
 
 server.on("close", () => {
-    redisDb.disconnect();
-    db.end()
+    try {
+        redisDb.disconnect();
+        db.end()
+    } catch (e) {
+        log("Exit 1")
+    }
 })
 
 io.on('connection', (socket) => {
