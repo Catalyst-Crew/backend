@@ -768,6 +768,7 @@ module.exports = {
     generateUsersReport,
     generateAreas,
     generateSensorsReport,
+    generateAlerts,
 
     getLineFromError,
     getDaysFromNow
